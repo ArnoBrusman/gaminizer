@@ -1,0 +1,22 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : Jul 17, 2016, 8:22:04 PM
+    Author     : Brusman
+*/
+
+
+.spellslots input {
+    border: medium none;
+    display: inline-block;
+    width: 20%;
+}
+.spellslots label {
+    width: 40px;
+}
+.spellslots input:first-of-type {
+    text-align: right;
+}

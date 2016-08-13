@@ -1,0 +1,42 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : Jul 3, 2016, 2:49:10 PM
+    Author     : Brusman
+*/
+
+
+.ability_scores > div {
+    border: 1px solid;
+    border-radius: 5px;
+    margin: 0 0 21px;
+    padding: 10px 5px;
+    position: relative;
+    text-align: center;
+    max-width: 90px;
+}
+.ability_scores div input {
+    border-color: #616161;
+    border-radius: 50%;
+    border-style: inset;
+    border-width: 2px;
+    bottom: -12px;
+    display: block;
+    left: 50%;
+    margin: 0 auto;
+    position: absolute;
+    right: auto;
+    text-align: center;
+    transform: translateX(-50%);
+    width: 3em;
+}
+.ability_scores div span {
+    display: block;
+    font-weight: normal;
+}
+.ability_scores label {
+    text-transform: capitalize;
+}

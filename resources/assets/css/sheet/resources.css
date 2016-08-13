@@ -1,0 +1,15 @@
+/* 
+    Created on : Jul 18, 2016, 9:13:02 PM
+    Author     : Brusman
+*/
+
+.feature_actions label {
+    width: 100%;
+}
+.feature_actions input {
+    border: medium none;
+    width: 25px;
+}
+.feature_actions input:first-of-type {
+    text-align: right;
+}

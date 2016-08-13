@@ -1,0 +1,44 @@
+/* 
+    Created on : Aug 11, 2016, 6:29:01 PM
+    Author     : Brusman
+*/
+
+#autocomplete-matches {
+    background-color: white;
+    z-index: 9001;
+}
+#autocomplete-matches span.match {
+    background-color: #ffffa0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    color: #333;
+    font-weight: bold;
+}
+#autocomplete-matches .list {
+    border: 1px solid #c0c0c0;
+    box-shadow: 0 4px 16px #ccc;
+    margin-bottom: 0;
+}
+#autocomplete-matches .list-item {
+    cursor: pointer;
+    padding: 10px 15px;
+}
+#autocomplete-matches .list-item span.entype {
+    margin-right: 10px;
+}
+#autocomplete-matches .list-item:first-child {
+    border-radius: 5px 5px 0 0;
+}
+#autocomplete-matches .list-item:last-child {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+#autocomplete-matches .list-item.selected {
+    background-color: #ebf4ff;
+}
+#autocomplete-matches .list-item.placeholder {
+    color: #ccc;
+    cursor: default;
+    font-size: 20px;
+    padding: 0 20px;
+}
