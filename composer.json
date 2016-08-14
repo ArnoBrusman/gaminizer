@@ -25,8 +25,10 @@
         "psr-4": {
             "App\\": "app/",
             "Gaminizer\\": "app/Gaminizer",
-            "Gaminizer\\Presenter\\": "app/Gaminizer/Presenter",
-            "Template\\": "app/Template"
+            "Gaminizer\\Presenters\\": "app/Gaminizer/Presenters",
+            "Gaminizer\\ViewComposers\\": "app/Http/ViewComposers",
+            "Gaminizer\\Providers\\": "app/Gaminizer/Providers",
+            "App\\Http\\Controllers\\RestApi\\": "app/Http/Controllers/RestApi"
         }
     },
     "autoload-dev": {

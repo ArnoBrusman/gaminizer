@@ -1,0 +1,14 @@
+
+{% block header_loader %}
+	 page.add_script('initiative', 'sheet/initiative.js', {require : "rpgtjs"}) 
+	 page.add_style('sheet/initiative.css') 
+{% endblock %}
+
+{% block view_template %}
+<script type="text/html" id="initiative_template">
+    <div class="item_initiative">
+        <label for="initiative">initiative</label>
+        <input id="initiative" value="<%= initiative %>">
+    </div>
+</script>
+{% endblock %}

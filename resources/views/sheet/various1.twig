@@ -1,0 +1,14 @@
+
+{% block header_loader %}
+	 page.add_script('various1', 'sheet/various1.js', {require : "rpgtjs"}) 
+	 page.add_style('sheet/various1.css') 
+{% endblock %}
+
+{% block view_template %}
+<script id="various1_item_template" type="text/html">
+    <div class="<%= id %>"> 
+        <input type="text" id="<%= id %>" value="<%= value %>" > 
+        <strong><%= name %></strong>
+    </div>
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+
+{% block header_loader %}
+	 page.add_script('hitdice', 'sheet/hitdice.js', {require : "rpgtjs"}) 
+	 page.add_style('sheet/hitdice.css') 
+{% endblock %}
+
+{% block view_template %}
+<script type="text/html" id="hitdice_template">
+    <strong>Hit dice</strong>
+</script>
+<script type="text/html" id="hitdice_item_template">
+    <div class="item_hit_dice">
+        <strong>d<%= die_size %></strong>
+        <input id="hd_current" value="<%= current %>"> / <input id="hd_max" value="<%= max %>">
+    </div>
+</script>
+{% endblock %}

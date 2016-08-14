@@ -4,32 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Gaminizer\Character;
+use Gaminizer\SheetPage;
 use Template;
 
 class SheetController extends Controller {
   
-  var $viewmodels = array();
+    var $viewmodels = array();
     
-  function showCharacter($id)
-  {
-    $character = Character::find($id);
-    
-    $template = new Template\Template();
-    $template->set_filename('header', 'header.tpl');
-    return $template->p(TRUE);
-    
-//    return view('sheet', ['character' => $character]);
-  }
-          
-  function index()
-  {
-    $this->add_viewmodel('index');
-  }
+    function showCharacter($id)
+    {
 
-  function sheet($character_id) {
-    
-    $pc_data = $this->pc_model->get_by_id($character_id, array('race'));
-    
-  }
+//      $SheetPage = new SheetPage($id);
+
+        return view('sheet');
+      
+//      return $SheetPage->render();
+
+    }
+          
+    function index($id)
+    {
+        return $this->showCharacter($id);
+    }
+
+    function sheet($character_id) {
+
+      $pc_data = $this->pc_model->get_by_id($character_id, array('race'));
+
+    }
   
 }

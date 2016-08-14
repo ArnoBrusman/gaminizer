@@ -23,9 +23,14 @@
        
 
 <!-- BEGIN get_combined -->
+{% block header_block %}{% endblock %}
+{% block header_css %}
 <link rel="stylesheet" type="text/css" href="./cache/combinedv0nkur.css">
+{% endblock %}
 
+{% block header_scripts %}
 <script type="text/javascript" src="./cache/combinedj76eza.js"></script>
+{% endblock %}
 
 
 <!-- END get_combined -->
@@ -35,8 +40,10 @@
 <![endif]-->
 
 </head>
+<div id="page">
+{% block page %}{% endblock %}
+</div>
 
-{% block sheet %}{% endblock %}
 
 <footer>
 </footer>

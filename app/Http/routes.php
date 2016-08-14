@@ -15,10 +15,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-//Route::get('character/{id}', function(App\Character $character) {
-//  return view('character', $character);
-//  echo 'hello #' . $character->id;
-//});
-Route::any('sheet/{id}', 'SheetController@showCharacter');
-//Route::any('character/{id}', /*'CharacterController@showCharacter'*/ function($id){ echo 'hello # '.$id; });
-//Route::any('character/{id}', function(App\Character $user){  echo '<pre>' . print_r($user, true) . '</pre>'; });
+
+Route::any('sheet/{id}', 'SheetController@index');
+
+//
+Route::any('restapi/{method}/{id}', 'RestApi\\CharactersController@index');

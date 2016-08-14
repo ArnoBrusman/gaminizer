@@ -155,7 +155,14 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        
+        /*
+         * Custom providers
+         */
+        Gaminizer\Providers\ComposerServiceProvider::class,
 
+        
+        
         // add smarty extension
         \Ytake\LaravelSmarty\SmartyServiceProvider::class, 
         // add artisan commands  
@@ -164,6 +171,7 @@ return [
         \Ytake\LaravelSmarty\SmartyCompileServiceProvider::class,
         
         TwigBridge\ServiceProvider::class,
+        
     ],
 
     /*

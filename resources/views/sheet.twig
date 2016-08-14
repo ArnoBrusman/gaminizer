@@ -1,6 +1,95 @@
-{% extends "base.html" %}
+{% extends "base.twig" %}
 
-<div id="page">
+
+{#{combine_script id="jquery" load="header" }
+{combine_script id="underscore" load="header" require="jquery" path="./application/views/default/js/underscore-min.js" }
+{combine_script id="backbone" load="header" require="underscore" path="./application/views/default/js/backbone-min.js" }
+{combine_script id="rpgtjs" load="header" require="backbone" path="./application/views/default/js/rpgt.js" }#}
+
+
+
+{% set javascripts = ['sheet/sheet.js'] %}
+{#
+    {% for view in views %}
+        {% use view %}
+    {% endfor %}#}
     
-{% block content %}{% endblock %}
-</div>
+{% block header_block %}
+    {{ page.add_script('jquery', 'jquery-3.1.0.min.js') }}
+    {{ page.add_script('underscore', 'underscore-min.js', {require : 'jquery'}) }}
+    {{ page.add_script('bootstrap', 'bootstrap.js', {require : 'jquery'} ) }}
+    {{ page.add_script('bootstrap', 'backbone-min.js', {require : ['jquery', 'underscore']} ) }}
+    {{ page.add_script('rpgtjs', 'rpgt.js', {require : ['jquery', 'underscore']} ) }}
+    {{ page.add_script('sheetjs', 'sheet/sheet.js', {require : ['rpgtjs', 'jquery', 'underscore']} ) }}
+    {% for view in views %}
+        {% embed view %}
+            {# override unwanted view blocks #}
+            {% block content_block %}{% endblock %}
+            {% block view_template %}{% endblock %}
+        {% endembed %}
+    {% endfor %}
+{% endblock %}
+
+{% block header_scripts %}
+    {% for script in page.get_scripts() %}
+        <script type="text/javascript" src="js/{{script}}"></script>
+    {% endfor %}
+{% endblock %}
+    
+{% block page %}
+    
+{% for view in views %}
+    {% embed view %}
+        {# override unwanted view blocks #}
+        {% block header_loader %}{% endblock %}
+        {% block content_block %}{% endblock %}
+    {% endembed %}
+{% endfor %}
+    
+    
+
+    <script id="sheet_template" type="text/html">
+        <div class="container">
+        <div class="row">
+            <div class="col-md-12"><div class="sheet_header clearfix"></div></div>
+        </div>
+        <div class="row sheet_row">
+            <div class="col-lg-2 col-sm-2 col-xs-3">
+                <div class="ability_scores clearfix"></div>
+
+            </div>
+            <div class="col-md-2 col-sm-3 col-xs-4">
+                <div class="saves clearfix"></div>
+                <div class="skills clearfix"></div>
+
+            </div>
+            <div class="col-md-2 col-xs-5">
+                <div class="row">
+                    <div class="col-xs-6">
+                        <div class="item_armor clearfix"></div>
+                    </div>
+                    <div class="col-xs-6">
+                        <div class="initiative clearfix"></div>
+                    </div>
+                </div>
+                <div class="hitpoints clearfix"></div>
+                <div class="hitdice clearfix"></div>
+                <div class="death_saves clearfix"></div>
+            </div>
+            <div class="col-md-2 col-xs-5">
+                <div class="various1 clearfix"></div>
+                <div class="spellslots clearfix"></div>
+                <div class="feature_actions clearfix"></div>
+            </div>
+            <div class="col-md-2 col-xs-6">
+                <div class="possessions clearfix"></div>
+
+            </div>
+        </div>
+
+        </div>
+    </script>
+
+    
+{% endblock %}
+

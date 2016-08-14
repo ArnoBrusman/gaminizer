@@ -1,0 +1,16 @@
+
+{% block header_loader %}
+{#	 page.add_script('possessions', 'sheet/possessions.js', {require : "rpgtjs"}) #}
+{#	 page.add_style('sheet/possessions.css') #}
+
+{% endblock %}
+
+{% block view_template %}
+<div class="possessions clearfix">
+    {foreach $weapons as $weapon}
+        <input name="{$weapon['name']}_name" name="{$weapon['name']}"/>
+        <input name="{$weapon['name']}_hit" name="level_{$action['level']}_uses" value="{$action['uses'] - $action['used']}"/> /
+        <input name="{$weapon['name']}_uses_max" name="level_{$action['level']}_uses_max" value="{$action['uses']}"/>
+    {/foreach}
+</div>
+{% endblock %}

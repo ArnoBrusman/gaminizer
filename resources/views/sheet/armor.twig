@@ -1,0 +1,11 @@
+{% block header_loader %}
+    {{ page.add_script('armor', 'sheet/armor.js', {require : "rpgtjs"}) }}
+    {{ page.add_style('sheet/armor.css') }}
+{% endblock %}
+
+{% block view_template %}
+<script type="text/html" id="armor_template">
+    <label for="armor_class">armor class</label>
+    <input id="armor_class" value="<%= AC %>">
+</script>
+{% endblock %}

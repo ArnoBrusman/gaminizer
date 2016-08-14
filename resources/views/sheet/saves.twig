@@ -1,0 +1,17 @@
+{% block header_loader %}
+	 page.add_script('saves', 'sheet/saves.js', {require : "rpgtjs"}) 
+	 page.add_style('sheet/saves.css') 
+{% endblock %}
+
+{% block view_template %}
+<script id="saves_template" type="text/html">
+    <h2>Saves:</h2>
+</script>
+
+<script id="saves_item_template" type="text/html">
+    <div class="item_<%= name %>">
+        <label for="<%= name %>_save"><%= name %>:</label>
+        <input id="<%= name %>_save" value='<%= value %>'>
+    </div>
+</script>
+{% endblock %}

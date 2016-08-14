@@ -1,0 +1,17 @@
+{% block header_loader %}
+    {{ page.add_script('abilities', 'sheet/abilities.js', {require : "rpgtjs"}) }}
+    {{ page.add_style('abilities.css') }}
+{% endblock %}
+
+{% block view_block %}
+<script id="ability_scores_item_template" type="text/html">
+    <div class="item_<%= key %>">
+        <label for="<%= key %>_score">
+            <b><%= key %></b>
+            <span class="modifier"><% if (calc_ability_mod(score) > 0) { print('+'); } print(calc_ability_mod(score)); %></span>
+        </label>
+
+        <input id="<%= key %>_score" value='<%= score %>'>
+    </div>
+</script>
+{% endblock %}
