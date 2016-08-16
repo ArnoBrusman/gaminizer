@@ -1,7 +1,7 @@
 
 {% block header_loader %}
-	 page.add_script('various1', 'sheet/various1.js', {require : "rpgtjs"}) 
-	 page.add_style('sheet/various1.css') 
+	{{ page.add_script('various1', 'sheet/various1.js', {require : "rpgtjs"}) }}
+	{{ page.add_style('sheet/various1.css') }}
 {% endblock %}
 
 {% block view_template %}

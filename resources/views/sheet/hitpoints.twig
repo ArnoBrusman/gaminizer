@@ -1,6 +1,6 @@
 {% block header_loader %}
-	 page.add_script('hitpoints', 'sheet/hitpoints.js', {require : "rpgtjs"}) 
-	 page.add_style('sheet/hitpoints.css') 
+	 {{ page.add_script('hitpoints', 'sheet/hitpoints.js', {require : "rpgtjs"}) }}
+	 {{ page.add_style('sheet/hitpoints.css') }}
 {% endblock %}
 
 

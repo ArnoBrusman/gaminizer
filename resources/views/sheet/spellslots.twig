@@ -1,6 +1,6 @@
 {% block header_loader %}
-	 page.add_script('spellslots', 'sheet/spellslots.js', {require : "rpgtjs"}) 
-	 page.add_style('sheet/spellslots.css') 
+	{{ page.add_script('spellslots', 'sheet/spellslots.js', {require : "rpgtjs"}) }}
+	{{ page.add_style('sheet/spellslots.css') }}
 {% endblock %}
 
 {% block view_template %}

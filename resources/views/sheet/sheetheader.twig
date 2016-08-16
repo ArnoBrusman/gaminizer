@@ -2,9 +2,9 @@
 
 {% block header_loader %}
     {{ page.add_script('sheetheader', 'sheet/sheetheader.js', {require : "rpgtjs"}) }}
-    {{ page.add_style('sheetheader.css') }}
+    {{ page.add_style('sheet/sheetheader.css') }}
 {% endblock %}
-{% block content_block %}
+{% block view_template %}
     
     <script id="sheetheader_item" type="text/html">
         <div class="header_item item_<%= name %>">

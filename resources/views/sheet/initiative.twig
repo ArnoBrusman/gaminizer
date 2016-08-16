@@ -1,7 +1,7 @@
 
 {% block header_loader %}
-	 page.add_script('initiative', 'sheet/initiative.js', {require : "rpgtjs"}) 
-	 page.add_style('sheet/initiative.css') 
+	 {{ page.add_script('initiative', 'sheet/initiative.js', {require : "rpgtjs"}) }}
+	 {{ page.add_style('sheet/initiative.css') }}
 {% endblock %}
 
 {% block view_template %}

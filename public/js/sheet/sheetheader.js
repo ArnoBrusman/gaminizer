@@ -58,14 +58,14 @@ rpgt.views.SheetHeaderView = Backbone.View.extend({
     
     add_default_values: function() {
     
-        var pc_name, pc_classes, pc_experience, pc_sight, pc_features, pc_race, pc_language, pc_speed;
+        var pc_name, pc_classes, pc_experience, pc_sight, pc_features, pc_race, pc_languages, pc_speed;
         pc_name = this.pc.get('name');
         pc_classes = this.pc.get('classes');
         pc_experience = this.pc.get('experience');
         pc_sight = this.pc.get('sight');
         pc_features = this.pc.get('features');
         pc_race = this.pc.get('race');
-        pc_language = this.pc.get('language');
+        pc_languages = this.pc.get('languages');
         pc_speed = this.pc.get('speed');
         
         //add items
@@ -76,22 +76,25 @@ rpgt.views.SheetHeaderView = Backbone.View.extend({
         } else {
             // classes will have different names and ids when there is more than 1
             _.each(pc_classes, function(values){
-                this.add_item('class_'+values.ID, values.name);
-                this.add_item('level_'+values.ID, values.level);
+                this.add_item('class_'+values.id, values.name);
+                this.add_item('level_'+values.id, values.level);
             });
         }
         this.add_item('experience', pc_experience);
         if(pc_sight.length !== 0) {
             _.each(pc_sight, function(values) {
-                this.add_item('sight_'+values.ID, values.name);
+                this.add_item('sight_'+values.id, values.name);
             });
         }
         this.add_item('race', pc_race.get('name'));
         
-        var languages_str = '', last = _.last(pc_language).ID;
-        _.each(pc_language, function(values) {
+        if(!_.isEmpty(pc_languages)) {
+            var languages_str = '', last = _.last(pc_languages).id;
+        }
+        window.console.log(pc_languages);
+        _.each(pc_languages, function(values) {
             languages_str += values.name;
-            if (values.ID !== last) { languages_str += ', '}
+            if (values.id !== last) { languages_str += ', '}
         });
         this.add_item('language', languages_str);
         

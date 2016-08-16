@@ -26,7 +26,7 @@ return [
     |
     */
 
-    'debug' => env('APP_DEBUG', false),
+    'debug' => env('APP_DEBUG', TRUE),
 
     /*
     |--------------------------------------------------------------------------
@@ -172,6 +172,12 @@ return [
         
         TwigBridge\ServiceProvider::class,
         
+        
+        /*
+         * Debug:
+         */
+        Barryvdh\Debugbar\ServiceProvider::class,
+        
     ],
 
     /*
@@ -219,6 +225,12 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
 
         'Twig' => TwigBridge\Facade\Twig::class,
+        
+        /*
+         * Debug:
+         */
+        'Debugbar' => Barryvdh\Debugbar\Facade::class,
+        
     ],
 
 ];

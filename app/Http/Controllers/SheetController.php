@@ -14,12 +14,8 @@ class SheetController extends Controller {
     function showCharacter($id)
     {
 
-//      $SheetPage = new SheetPage($id);
-
         return view('sheet');
       
-//      return $SheetPage->render();
-
     }
           
     function index($id)

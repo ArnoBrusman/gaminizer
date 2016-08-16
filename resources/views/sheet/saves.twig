@@ -1,6 +1,6 @@
 {% block header_loader %}
-	 page.add_script('saves', 'sheet/saves.js', {require : "rpgtjs"}) 
-	 page.add_style('sheet/saves.css') 
+	 {{ page.add_script('saves', 'sheet/saves.js', {require : "rpgtjs"}) }}
+	 {{ page.add_style('sheet/saves.css') }}
 {% endblock %}
 
 {% block view_template %}

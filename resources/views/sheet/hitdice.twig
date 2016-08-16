@@ -1,7 +1,7 @@
 
 {% block header_loader %}
-	 page.add_script('hitdice', 'sheet/hitdice.js', {require : "rpgtjs"}) 
-	 page.add_style('sheet/hitdice.css') 
+	 {{ page.add_script('hitdice', 'sheet/hitdice.js', {require : "rpgtjs"}) }}
+	 {{ page.add_style('sheet/hitdice.css') }}
 {% endblock %}
 
 {% block view_template %}

@@ -115,7 +115,7 @@ rpgt.collections.Pcs = Backbone.Collection.extend({
 
 	namespace: "pc",
     
-	url: "restapi/characters/",
+	url: "restapi/characters",
     
 	initialize: function (models, options) {
 		this.model = rpgt.models.Pc;
@@ -174,7 +174,7 @@ rpgt.collections.Classes = Backbone.Collection.extend({
 			var string = "%% " + ch_class.get("name") + " %%";
             // TODO: class icon 
 			var html = ["<span>",  "</span>"]
-			var id = "class/" + ch_class.get( "ID" );
+			var id = "class/" + ch_class.get( "id" );
 			entries.push({ string: string, html: html, id: id});
 
 		})
@@ -227,7 +227,7 @@ rpgt.collections.Races = Backbone.Collection.extend({
 rpgt.models.Pc = Backbone.Model.extend({
     
 	namespace: "pc",
-    idAttribute: 'ID',
+    idAttribute: 'id',
     
 	url: function(){
         return 'restapi/characters/' + this.get('id');
@@ -285,6 +285,9 @@ rpgt.models.Pc = Backbone.Model.extend({
         features: function() {
             var features = [], pc_features = this.get('pc_features');
             
+            window.console.log(this.attributes);
+            window.console.log(pc_features);
+            
             _.each(pc_features, function(pcf_atr){
                 var pc_feature = rpgt.Features.get(pcf_atr.feature_id).attributes;
                 pc_feature.origin = pcf_atr.origin;
@@ -301,7 +304,7 @@ rpgt.models.Pc = Backbone.Model.extend({
             
             _.each(features, function(feature){
                 if(feature.type === 'SPL') {
-                    var pc_spellfeature = rpgt.SpellsFeatures.where({feature_id : feature.ID})[0].attributes;
+                    var pc_spellfeature = rpgt.SpellsFeatures.where({feature_id : feature.id})[0].attributes;
                     pc_spellfeature.origin = feature.origin;
                     pc_spellfeature.used = feature.used;
                     spellsfeatures.push(pc_spellfeature);
@@ -319,7 +322,7 @@ rpgt.models.Pc = Backbone.Model.extend({
             return result;
         },
         
-        language: function() {
+        languages: function() {
             var features = this.get('features');
             var result = _.filter(features, function(feature){
                 return feature.type.substring(0,3).match(/LNG/);
@@ -386,11 +389,10 @@ rpgt.models.Pc = Backbone.Model.extend({
 rpgt.models.PcStats = Backbone.Model.extend({
     
 	namespace: "stats",
-    idAttribute: 'ID',
     pc: null,
     
 	url: function () {
-		return "restapi/characters/" + this.get('ID') + "/stats/"
+		return "restapi/characters/" + this.get('id') + "/stats/"
 	},
     
     getters: {
@@ -515,7 +517,6 @@ rpgt.models.PcStats = Backbone.Model.extend({
 rpgt.models.PcAbilityScores = Backbone.Model.extend({
     
 	namespace: "ability_scores",
-    idAttribute: 'ID',
     pc: null,
     
 	url: function () {
@@ -533,7 +534,6 @@ rpgt.models.PcAbilityScores = Backbone.Model.extend({
 rpgt.models.Class = Backbone.Model.extend({
     
 	namespace: "model",
-    idAttribute: 'ID',
     
 	url: function() {
         return 'restapi/classes/' + this.get('id');
@@ -548,7 +548,6 @@ rpgt.models.Class = Backbone.Model.extend({
 rpgt.models.Feature = Backbone.Model.extend({
     
 	namespace: "features",
-    idAttribute: 'ID',
     
 	url: function(){
         return 'restapi/features/' + this.get('id');
@@ -563,7 +562,6 @@ rpgt.models.Feature = Backbone.Model.extend({
 rpgt.models.SpellsFeature = Backbone.Model.extend({
     
 	namespace: "features",
-    idAttribute: 'ID',
     
 	url: function(){
         return 'restapi/features/spellsfeatures/' + this.get('id');
@@ -582,7 +580,6 @@ rpgt.models.SpellsFeature = Backbone.Model.extend({
 rpgt.models.Race = Backbone.Model.extend({
     
 	namespace: "races",
-    idAttribute: 'ID',
     
 	url: function(){
         return 'restapi/races/' + this.get('id');
@@ -597,7 +594,6 @@ rpgt.models.Race = Backbone.Model.extend({
 rpgt.models.HRStats = Backbone.Model.extend({
     
 	namespace: "stats",
-    idAttribute: 'ID',
     
 	url: function(){
         return 'restapi/characters/hr_stats';
