@@ -28,5 +28,11 @@ class SheetController extends Controller {
       $pc_data = $this->pc_model->get_by_id($character_id, array('race'));
 
     }
+    
+    function init($character_id) {
+
+        return view('init');
+
+    }
   
 }

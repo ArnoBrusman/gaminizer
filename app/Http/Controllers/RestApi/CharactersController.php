@@ -12,6 +12,12 @@ use Gaminizer\Pc;
 class CharactersController extends RestApiController
 {
     
+    function test()
+    {
+        // call /characters/test for this function
+    }
+
+
     //-----------------------------------------------------
     // Getters
     //-----------------------------------------------------
@@ -108,4 +114,5 @@ class CharactersController extends RestApiController
       
       return response($data)->header('Content-Type', 'application/json');
     }
+    
 }

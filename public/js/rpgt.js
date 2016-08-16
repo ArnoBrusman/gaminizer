@@ -132,10 +132,17 @@ rpgt.collections.PcsStats = Backbone.Collection.extend({
         
 	},
     
-    getAttributes: function () {
-        // rpgt.models.Pc.get(pc_id)
-        // 
-    },
+});
+
+rpgt.collections.PcsStatsElaborate = Backbone.Collection.extend({
+
+	namespace: "stats",
+	url: "restapi/characters/stats?elaborate=true",
+    
+	initialize: function (models, options) {
+		this.model = rpgt.models.PcStats;
+        
+	},
     
 });
 
@@ -234,13 +241,26 @@ rpgt.models.Pc = Backbone.Model.extend({
     },
     
     getters: {
+        
         stats: function() {
             return rpgt.PcsStats.get(this.get('id'));
+        },
+        
+        stats_elaborate: function() {
+            return rpgt.PcsStatsElaborate.get(this.get('id'));
         },
         
         ability_scores: function() {
             var stats = this.get('stats');
             return stats.get('ability_scores') ;
+        },
+        
+        /**
+         * Get initial ability scores. The ability score gotten on Character Creation. 
+         */
+        ability_scores_elaborate: function() {
+            var stats = this.get('stats_elaborate');
+            return stats.get('ability_scores');
         },
         
         classes: function() {
@@ -284,9 +304,6 @@ rpgt.models.Pc = Backbone.Model.extend({
         
         features: function() {
             var features = [], pc_features = this.get('pc_features');
-            
-            window.console.log(this.attributes);
-            window.console.log(pc_features);
             
             _.each(pc_features, function(pcf_atr){
                 var pc_feature = rpgt.Features.get(pcf_atr.feature_id).attributes;
@@ -382,11 +399,148 @@ rpgt.models.Pc = Backbone.Model.extend({
             return result;
         },
         
+    },
+    
+    setters: {
+        
+        init_ability_scores: function(attributes) {
+            var stats = this.get('stats');
+            return stats.set({'ability_scores' : attributes}) ;
+        },
+        
     }
 
 }).setGettersSetters();
 
 rpgt.models.PcStats = Backbone.Model.extend({
+    
+	namespace: "stats",
+    pc: null,
+    
+	url: function () {
+		return "restapi/characters/" + this.get('id') + "/stats/"
+	},
+    
+    getters: {
+        ability_scores: function() {
+            var ability_scores = {};
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,2).match(/AS/)) {
+                   ability_scores[type.substring(3)] = attribute;
+                }
+            });
+            return ability_scores;
+        },
+        
+        speed: function() {
+            var speeds = {};
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,3).match(/SPD/)) {
+                   speeds[type.substring(4)] = attribute;
+                }
+            });
+            return speeds;
+        },
+        
+        saves: function() {
+            var saves = {};
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,3).match(/SAV/)) {
+                   saves[type.substring(4)] = attribute;
+                }
+            });
+            return saves;
+            
+        },
+        
+        skills: function() {
+            var skills = {};
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,4).match(/CSKL/)) {
+                   skills[type.substring(5)] = attribute;
+                }
+            });
+            return skills;
+            
+        },
+        
+        ribbon_skills: function() {
+            var skills = {};
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,3).match(/RSKL/)) {
+                   skills[type.substring(4)] = attribute;
+                }
+            });
+            return skills;
+            
+        },
+        
+        armor_class: function() {
+            var AC_stats = {}, ac_val;
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,2).match(/AC/)) {
+                   AC_stats[type] = attribute;
+                }
+            });
+            
+            if(_.isEmpty(AC_stats)) {
+              ac_val = 10;
+            } else {
+              if(_.isUndefined(AC_stats.AC_BASE)) {
+                ac_val = AC_stats.AC_BASE;
+              } else {
+                ac_val = 10;
+              }
+              ac_val += AC_stats.AC;
+            }
+            
+            return ac_val;
+            
+        },
+        
+        initiative: function() {
+            return this.get('INI') || 10;
+        },
+        
+        hitpoints: function () {
+            var hitpoints = {}, ac_val;
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,2).match(/HP/)) {
+                   hitpoints[type] = attribute;
+                }
+            });
+            return hitpoints;
+        },
+        
+        hitdice: function () {
+            var hitdice = {}, ac_val;
+            _.each(this.attributes, function(attribute, type) {
+                if(type.substring(0,3).match(/HTD/)) {
+                    var hd_type = type.substring(4).match(/^\d*/)[0];
+                    var used = type.substring(4).match(/USD$/) || ['MAX'];
+                    used = used[0];
+                    if (_.isUndefined(hitdice[hd_type])){
+                        hitdice[hd_type] = {};
+                    };
+                    hitdice[hd_type][used] = attribute;
+                }
+            });
+            return hitdice;
+        },
+        
+        insipration: function() {
+            return this.get('INSPN') || 0;
+        },
+        
+        exhaustion: function() {
+            return this.get('EXH') || 0;
+        },
+        
+    }
+
+}).setGettersSetters();
+
+rpgt.models.PcStatsElaborate = Backbone.Model.extend({
     
 	namespace: "stats",
     pc: null,
@@ -616,6 +770,7 @@ rpgt.models.HRStats = Backbone.Model.extend({
 rpgt.createGlobalResources = function() {
 	rpgt.pcs = new rpgt.collections.Pcs();
 	rpgt.PcsStats = new rpgt.collections.PcsStats();    
+	rpgt.PcsStatsElaborate = new rpgt.collections.PcsStatsElaborate();    
 	rpgt.Classes = new rpgt.collections.Classes();    
 	rpgt.Features = new rpgt.collections.Features();    
 	rpgt.SpellsFeatures = new rpgt.collections.SpellsFeatures();    
@@ -628,7 +783,7 @@ rpgt.createGlobalResources = function() {
 }
 
 rpgt.fetchResources = function(options) {
-    rpgt.totalResources = 8;	
+    rpgt.totalResources = 9;	
 	rpgt.resourcesFetched = 0;
 	rpgt.isFetchingResources = true;
     
@@ -637,6 +792,7 @@ rpgt.fetchResources = function(options) {
     
     rpgt.pcs.fetch({ success: function () {  rpgt.onFetchSuccess("characters", options); } });
     rpgt.PcsStats.fetch({ success: function () {  rpgt.onFetchSuccess("character stats", options); } });
+    rpgt.PcsStatsElaborate.fetch({ success: function () {  rpgt.onFetchSuccess("character stats (elaborate)", options); } });
     rpgt.Classes.fetch({ success: function () {  rpgt.onFetchSuccess("classes", options); } });
     rpgt.Features.fetch({ success: function () {  rpgt.onFetchSuccess("features", options); } });
     rpgt.SpellsFeatures.fetch({ success: function () {  rpgt.onFetchSuccess("spellsfeatures", options); } });

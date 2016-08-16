@@ -17,6 +17,9 @@ class ComposerServiceProvider extends ServiceProvider
         view()->composer(
             'sheet', 'Gaminizer\ViewComposers\SheetComposer'
         );
+        view()->composer(
+            'init', 'Gaminizer\ViewComposers\InitComposer'
+        );
 
         // Using Closure based composers...
 //        view()->composer('dashboard', function ($view) {

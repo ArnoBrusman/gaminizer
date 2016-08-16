@@ -15,8 +15,20 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+//-----------------------------------------------------
+// Debug routes
+//-----------------------------------------------------
+Route::any('characters/test', 'RestApi\\CharactersController@test');
+//Route::any('test/stats', function(){
+//     $response = $this->call('POST', '/restapi/characters/stats',
+//             ['elaborate' => TRUE]);
+//});
+//-----------------------------------------------------
+// Sheet Routes
+//-----------------------------------------------------
 
 Route::any('sheet/{id}', 'SheetController@index');
+Route::any('init/{id}', 'SheetController@init');
 
 //-----------------------------------------------------
 // Api Routes
@@ -53,3 +65,4 @@ Route::any('restapi/races/{id}', 'RestApi\\RacesController@getOne')
 Route::any('restapi/races/{id}/{any}', 'RestApi\\RacesController@findData')
         ->where(['id' => '[0-9]+']);
 Route::any('restapi/races/{any}', 'RestApi\\RacesController@allData');
+

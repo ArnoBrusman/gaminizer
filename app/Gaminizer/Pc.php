@@ -180,8 +180,8 @@ class Pc extends Model
      */
     function get_stats($type = NULL, $elaborate = false ) 
     {
-        $pc_stats = $this->stats();
-        $stats = array();
+        $pc_stats = $this->stats()->getResults();
+        
 
         if(is_null($type)) {
             $stat_types = PcStats::get_stat_types();
@@ -189,23 +189,22 @@ class Pc extends Model
             $stat_types = PcStats::get_stat_types('/^'.$type.'$/');
         }
 
-        if(!$elaborate) {
-            $pc_stats_result = $pc_stats->getResults();
-        }
-        foreach ($stat_types as $stat_type) {
+        $stats = [];
+        if($elaborate) {
             // if the elaborate result is wanted, give it and go
-            if($elaborate) {
-                $endstat = array();
-                foreach ($pc_stats as $key => $stat) {
+            foreach ($stat_types as $stat_type) {
+                $k = 0;
+                foreach ($pc_stats as $stat) {
                     if(!preg_match('/'.$stat_type.'/', $stat['type'])) {
                         continue;
                     }
-                    $endstat[$key] = $stat;
+                    $stats[$stat_type][] = $stat;
                 }
-                $stats[$stat_type] = $endstat;
-            } else {
-                
-                $stats[$stat_type] = $pc_stats_result->calc_stat_type_value($stat_type);
+                $k++;
+            }
+        } else {
+            foreach ($stat_types as $stat_type) {
+                $stats[$stat_type] = $pc_stats->calc_stat_type_value($stat_type);
             }
         }
 

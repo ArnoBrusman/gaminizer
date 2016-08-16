@@ -91,7 +91,7 @@ rpgt.views.SheetHeaderView = Backbone.View.extend({
         if(!_.isEmpty(pc_languages)) {
             var languages_str = '', last = _.last(pc_languages).id;
         }
-        window.console.log(pc_languages);
+        
         _.each(pc_languages, function(values) {
             languages_str += values.name;
             if (values.id !== last) { languages_str += ', '}
