@@ -78,7 +78,6 @@ class CharactersController extends RestApiController
             }
         } else {
             $data = $characters->get_stats($type, $elaborate);
-            $data['id'] = $characters['id'];
         }
         
         return response($data)->header('Content-type', 'application/json');

@@ -66,3 +66,10 @@ Route::any('restapi/races/{id}/{any}', 'RestApi\\RacesController@findData')
         ->where(['id' => '[0-9]+']);
 Route::any('restapi/races/{any}', 'RestApi\\RacesController@allData');
 
+// Stats Elaborate controller
+Route::any('restapi/pcstats/', 'RestApi\\PcStatsController@getAll');
+Route::any('restapi/pcstats/{id}', 'RestApi\\PcStatsController@getOne')
+        ->where(['id' => '[0-9]+']);
+Route::any('restapi/pcstats/{id}/{any}', 'RestApi\\PcStatsController@findData')
+        ->where(['id' => '[0-9]+']);
+Route::any('restapi/pcstats/{any}', 'RestApi\\PcStatsController@allData');

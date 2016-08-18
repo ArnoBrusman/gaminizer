@@ -12,7 +12,7 @@
             <span class="modifier"><% if (calc_ability_mod(score) > 0) { print('+'); } print(calc_ability_mod(score)); %></span>
         </label>
 
-        <input id="<%= key %>_score" class="item_input" value='<%= score %>'>
+        <input data-id="<%= id %>" id="<%= key %>_score" class="item_input" value='<%= score %>'>
     </div>
 </script>
 {% endblock %}

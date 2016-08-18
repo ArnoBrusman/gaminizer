@@ -198,7 +198,7 @@ class Pc extends Model
                     if(!preg_match('/'.$stat_type.'/', $stat['type'])) {
                         continue;
                     }
-                    $stats[$stat_type][] = $stat;
+                    $stats[] = $stat;
                 }
                 $k++;
             }

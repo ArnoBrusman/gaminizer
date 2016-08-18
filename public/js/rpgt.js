@@ -125,42 +125,29 @@ rpgt.collections.Pcs = Backbone.Collection.extend({
 rpgt.collections.PcsStats = Backbone.Collection.extend({
 
 	namespace: "stats",
-	url: "restapi/characters/stats",
+    url: "restapi/characters/stats",
     
 	initialize: function (models, options) {
 		this.model = rpgt.models.PcStats;
-        
-	},
+	}
     
 });
 
 rpgt.collections.PcsStatsElaborate = Backbone.Collection.extend({
 
-	namespace: "stats",
-	url: "restapi/characters/stats?elaborate=true",
+	namespace: "stats_elaborate",
     
 	initialize: function (models, options) {
-		this.model = rpgt.models.PcStats;
-        
+        this.url = "restapi/characters/"+options.pc_id+"/stats?elaborate=true";
+		this.model = rpgt.models.PcStatsElaborate;
 	},
     
-});
-
-rpgt.collections.PcsAbilityScores = Backbone.Collection.extend({
-
-	namespace: "ability_scores",
-	url: "restapi/characters/ability_scores",
-    // ? pc_stats {all: {}, attributes: {}, }
-    
-	initialize: function (models, options) {
-		this.model = rpgt.models.PcsAbilityScores;
-        
-	},
-    
-    getAttributes: function () {
-        // rpgt.models.Pc.get(pc_id)
-        // 
-    },
+    get_ability_scores: function() {
+        var ability_scores = this.filter(function(data){
+            return RegExp(/^AS_/).test(data.get('type'));
+        });
+        return ability_scores;
+    }
     
 });
 
@@ -235,19 +222,36 @@ rpgt.models.Pc = Backbone.Model.extend({
     
 	namespace: "pc",
     idAttribute: 'id',
+    statsElaborate: {},
+    stats: {},
     
 	url: function(){
         return 'restapi/characters/' + this.get('id');
     },
     
+    initialize: function(attributes, options) {
+        this.statsElaborate = options.statsElaborate || throw_error('Pcs need elaborate stats');
+        this.stats = options.stats || throw_error('Pcs need stats');
+    },
+    
     getters: {
         
+        pc : rpgt.models.Pc,
+        
+        /**
+         * get the Pc's PcStats model
+         * @returns {unresolved}
+         */
         stats: function() {
-            return rpgt.PcsStats.get(this.get('id'));
+            return rpgt.PcStats;
         },
         
+        /**
+         * get the Pc's PcStatsElaborate model
+         * @returns {unresolved}
+         */
         stats_elaborate: function() {
-            return rpgt.PcsStatsElaborate.get(this.get('id'));
+            return this.statsElaborate.get(this.get('id'));
         },
         
         ability_scores: function() {
@@ -259,8 +263,7 @@ rpgt.models.Pc = Backbone.Model.extend({
          * Get initial ability scores. The ability score gotten on Character Creation. 
          */
         ability_scores_elaborate: function() {
-            var stats = this.get('stats_elaborate');
-            return stats.get('ability_scores');
+            return this.statsElaborate.get_ability_scores();
         },
         
         classes: function() {
@@ -403,10 +406,18 @@ rpgt.models.Pc = Backbone.Model.extend({
     
     setters: {
         
-        init_ability_scores: function(attributes) {
-            var stats = this.get('stats');
-            return stats.set({'ability_scores' : attributes}) ;
+        ability_scores_elaborate: function(ability_scores) {
+            window.console.log(this.get('ability_scores_elaborate'));
+            window.console.log(ability_scores);
+            var char_stats = this.statsElaborate.get(this.get('id'));
+//            window.console.log(char_stats);
+            return char_stats.set(ability_scores);
         },
+        
+        set_stats_elaborate: function(stats) {
+            var char_stats = this.statsElaborate.get(this.get('id'));
+            return char_stats.set(stats);
+        }
         
     }
 
@@ -418,11 +429,12 @@ rpgt.models.PcStats = Backbone.Model.extend({
     pc: null,
     
 	url: function () {
-		return "restapi/characters/" + this.get('id') + "/stats/"
+		return "restapi/pcstats/" + this.get('id');
 	},
     
     getters: {
         ability_scores: function() {
+            window.console.log('pc stats AS');
             var ability_scores = {};
             _.each(this.attributes, function(attribute, type) {
                 if(type.substring(0,2).match(/AS/)) {
@@ -537,28 +549,22 @@ rpgt.models.PcStats = Backbone.Model.extend({
         },
         
     }
+    
+    // Since the model is filled with server calculated data, there are no setters.
+    // TODO: find the efficient way to listen to the server for changes. Sockets?
 
 }).setGettersSetters();
 
 rpgt.models.PcStatsElaborate = Backbone.Model.extend({
     
-	namespace: "stats",
+	namespace: "stats_elaborate",
     pc: null,
     
 	url: function () {
-		return "restapi/characters/" + this.get('id') + "/stats/"
+		return "restapi/pcstats/" + this.get('id');
 	},
     
     getters: {
-        ability_scores: function() {
-            var ability_scores = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,2).match(/AS/)) {
-                   ability_scores[type.substring(3)] = attribute;
-                }
-            });
-            return ability_scores;
-        },
         
         speed: function() {
             var speeds = {};
@@ -663,6 +669,14 @@ rpgt.models.PcStatsElaborate = Backbone.Model.extend({
         exhaustion: function() {
             return this.get('EXH') || 0;
         },
+        
+    },
+    
+    setters: {
+        
+        ability_scores: function(ability_scores) {
+//            window.console.log(ability_scores);
+        }
         
     }
 
@@ -768,35 +782,46 @@ rpgt.models.HRStats = Backbone.Model.extend({
 // ---- resource loading 
 // TODO: pretty loading bar
 rpgt.createGlobalResources = function() {
+    //TODO: get data from url or login data
+    
+    var char_id = 1;
+	rpgt.PcStats = new rpgt.models.PcStats({id: char_id});    
+	rpgt.PcsStatsElaborate = new rpgt.collections.PcsStatsElaborate({},{pc_id: char_id});    
+    rpgt.currentPC = new rpgt.models.Pc({id: char_id},{
+        stats: rpgt.PcStats, 
+        statsElaborate: rpgt.PcsStatsElaborate
+    });
+    
 	rpgt.pcs = new rpgt.collections.Pcs();
-	rpgt.PcsStats = new rpgt.collections.PcsStats();    
-	rpgt.PcsStatsElaborate = new rpgt.collections.PcsStatsElaborate();    
 	rpgt.Classes = new rpgt.collections.Classes();    
 	rpgt.Features = new rpgt.collections.Features();    
 	rpgt.SpellsFeatures = new rpgt.collections.SpellsFeatures();    
 	rpgt.Races = new rpgt.collections.Races();
     rpgt.HRStats = new rpgt.models.HRStats();
     
-    //TODO: get data from url or login data
-    var char_id = 1;
-    rpgt.currentPC = new rpgt.models.Pc({id: char_id});
-}
+};
 
 rpgt.fetchResources = function(options) {
-    rpgt.totalResources = 9;	
+    rpgt.totalResources = 8;	
 	rpgt.resourcesFetched = 0;
 	rpgt.isFetchingResources = true;
     
+    // current PC specific collections
+    // TODO: now the pc specific stats will be tied to current pc, need to find
+    // a way to make it work with a dynamic ammount of players
+    //
     rpgt.currentPC.fetch({ success: function () {  rpgt.onFetchSuccess("current character", options); } });
-    rpgt.HRStats.fetch({ success: function () {  rpgt.onFetchSuccess("human readable stats", options); } });
-    
-    rpgt.pcs.fetch({ success: function () {  rpgt.onFetchSuccess("characters", options); } });
-    rpgt.PcsStats.fetch({ success: function () {  rpgt.onFetchSuccess("character stats", options); } });
+    rpgt.PcStats.fetch({ success: function () {  rpgt.onFetchSuccess("character stats", options); } });
     rpgt.PcsStatsElaborate.fetch({ success: function () {  rpgt.onFetchSuccess("character stats (elaborate)", options); } });
+    
+//    rpgt.pcs.fetch({ success: function () {  rpgt.onFetchSuccess("characters", options); } });
+    
+    rpgt.HRStats.fetch({ success: function () {  rpgt.onFetchSuccess("human readable stats", options); } });
     rpgt.Classes.fetch({ success: function () {  rpgt.onFetchSuccess("classes", options); } });
     rpgt.Features.fetch({ success: function () {  rpgt.onFetchSuccess("features", options); } });
     rpgt.SpellsFeatures.fetch({ success: function () {  rpgt.onFetchSuccess("spellsfeatures", options); } });
     rpgt.Races.fetch({ success: function () {  rpgt.onFetchSuccess("races", options); } });
+    
 }
 
 rpgt.onFetchSuccess = function ( resource, options ) {
