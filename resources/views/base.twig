@@ -89,7 +89,7 @@
 <script id="autocomplete_template" type="text/template">
     <div class="list">
         <% _.each(matches, function(match){ %>
-        <div class="list-item" data-autocomplete-value="<%= match.id %>">
+        <div class="list-item" data-autocomplete-value="<%= match.value %>">
             <%= match.html %>
         </div>
         <% }); %>

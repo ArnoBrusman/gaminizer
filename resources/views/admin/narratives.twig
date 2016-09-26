@@ -34,24 +34,24 @@
                 
                 rpgt.NarrativeClassRelations = new rpgt.views.NarrativeClassRelations({
                     el: $('#narrativeclasses'),
-                    collection: rpgt.Classes,
+                    foreignCollection: rpgt.Classes,
                     activeModel: activeModel
                 });  
                 
                 rpgt.NarrativeRaceRelations = new rpgt.views.NarrativeRaceRelations({
                     el: $('#narrativeraces'),
-                    collection: rpgt.Races,
+                    foreignCollection: rpgt.Races,
                     activeModel: activeModel
                 });  
                 rpgt.NarrativeFeatureRelations = new rpgt.views.NarrativeFeaturesRelations({
                     el: $('#narrativefeatures'),
-                    collection: rpgt.Features,
+                    foreignCollection: rpgt.Features,
                     activeModel: activeModel
                 });  
                 
                 relationContainers = [rpgt.NarrativeClassRelations, rpgt.NarrativeRaceRelations, rpgt.NarrativeFeatureRelations];
                 //bind events
-                rpgt.NarrativeView.on('model:update', function(newModel) {
+                rpgt.NarrativeView.on('narratives:model:update', function(newModel) {
                     _.each(relationContainers, function(container) {
                         container.setModel(newModel);
                     });
@@ -61,6 +61,8 @@
                         container.readHtml();
                     });
                 });
+                
+                rpgt.NarrativeView.render();
             }
         });
     });

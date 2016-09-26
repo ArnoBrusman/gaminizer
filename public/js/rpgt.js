@@ -108,17 +108,15 @@ Backbone.Model.setGettersSetters = function () {
 // *************************************
 // 
 // TODO: models in initialize function should be loaded in the collection
-var createAutoCompleteEntries = function(collection,namespace, icon)
+var createAutoCompleteEntries = function(collection, icon)
 {
-    var entries = [],
-            prefix = namespace ? namespace + '/' : collection.namespace + '/';
+    var entries = [];
     collection.each(function (model) {
 
         // TODO: class icon 
-        var string = "%% " + model.get("name") + " %%",
-            html = ["<span>", "</span>"],
-            id = prefix + model.get("id");
-        entries.push({string: string, html: html, id: id});
+        var name = model.get("name"),
+            value = model.get("id");
+        entries.push({name: name, value: value, icon: icon});
 
     });
 
