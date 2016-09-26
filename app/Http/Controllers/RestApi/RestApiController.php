@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Collection;
  */
 abstract class RestApiController extends Controller {
 
+    /**
+     * @var Request
+     */
     var $request;
     
     public function __construct(Request $request) {

@@ -2,10 +2,15 @@
 
 namespace Gaminizer;
 
-use Illuminate\Database\Eloquent\Model;
 
 class Race extends Model
 {
-    var $table = 'race';
-    //
+    
+    /**
+     * get core races
+     */
+    static function core($columns = ['*'])
+    {
+        return self::all($columns)->where('type', 'CORE');
+    }
 }

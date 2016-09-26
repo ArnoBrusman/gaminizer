@@ -1,64 +1,70 @@
 
-// global event handler for auto-complete input elements;
-rpgt.AutoComplete = {
 
+//// global event handler for auto-complete input elements;
+AutoComplete = function(options) {
+    var _clickHandler, namespace, $element, $display;
+    
+    namespace = _.isUndefined(options) || _.isUndefined(options.namespace) 
+            ? 'autocomplete' : options.namespace ;
+    
+    $element = {};
+    this.entries = {};
 
-	initialize: function ($element, entries) {
+    this.template =  _.template($('#autocomplete_template').html()),
+    
+	this.initialize = function ($element, entries) {
 
-        this.template =  _.template($('#autocomplete_template').html()),
-                
-		// remove all handlers that might have been set on the item;
-		$element.off();
-		$("body").off("click", function (event) { self.clickHandler( event) });
-		$("body").off("mouseenter", "#autocomplete-matches .list-item")
-
-		var self = this;		
-
+		var self = this, _destroy;
+        this.$element = $element;
+        this.setEntries(entries);
+	
 		// set keylisteners;
-		$element.on('keyup', function (event) { self.keyupHandler( event, $element, entries) });
-		$element.on('keydown', function (event) { self.keydownHandler( event, $element ) });
+		this.$element.on('keyup', function (event) { self.keyupHandler( event) });
+		this.$element.on('keydown', function (event) { self.keydownHandler( event ) });
 
-		// set a global click listener;
-		$("body").on("click", function (event) { self.clickHandler( event) });
+        _destroy = _.bind(this.unbindGlobalEvents, this);
+        $(document).on('pjax:start', _destroy);
+        return this;
 
-		// set a mouseenter listener for the matches-box;
-		$("body").on("mouseenter", "#autocomplete-matches .list-item", function (event) { 
-			self.$display.find(".selected").removeClass("selected");
-			$(event.target).addClass("selected")
-		})
+	};
 
-	},
-
-	ignoreKeys: [	16,		// shift
+	this.ignoreKeys = [	16,		// shift
 					17,		// ctrl
 					18,		// alt
 					38,		// up arrow
 					40		// down arrow
-	],
-
-	clickHandler: function (event) {
+	];
+    
+    this.setEntries = function(entries)
+    {
+        this.entries = entries;
+    };
+	
+	this.clickHandler = function (event) {
 
 		var $target = $(event.target);
-		if ($target.hasClass("placeholder") || $target.parent().hasClass("placeholder")) {
+        
+		if ($target.hasClass("placeholder") || $target.parent().hasClass("placeholder")
+                || this.$element[0] === $target[0] ) {
 			return;
 		}
 
 		//test if click was inside 
 		if ($("#autocomplete-matches").has($target).length === 1) {		
-			var $targetElement = $(event.target).closest(".list-item");			
-
+			var $targetElement = $target.closest(".list-item");			
+            
 			// jQuery doesn't pass along objects with length property unmodified, so we use the array work-around
-			// see: http://bugs.jquery.com/ticket/5532		
-			this.$activeElement.trigger("autocomplete", [ $targetElement ]); 
+			// see: http://bugs.jquery.com/ticket/5532
+			this.$element.trigger("autocomplete", [ $targetElement ]); 
 			
 		}
-		$("#autocomplete-matches").remove() 
+        if(!_.isUndefined(this.$display)) {
+            this.removeDisplay();
+        }
 
-	},
-	
-	keyupHandler: function (event, $element, entries) {		
-
-		this.$activeElement = $element
+	};
+    
+	this.keyupHandler = function (event) {		
 
 		var $target, value, matches, keycode;
 		
@@ -82,13 +88,12 @@ rpgt.AutoComplete = {
 			return
 		}	
 										
-		matches = this.matchQuery(value, entries);
-		
-		this.displayMatches( $target, matches );		
+		matches = this.matchQuery(value);
+		this.displayMatches( matches );		
 
-	},
+	};
 
-	keydownHandler: function (event) {
+	this.keydownHandler = function (event) {
 
 		var keycode = event.keyCode;
 
@@ -103,25 +108,41 @@ rpgt.AutoComplete = {
 			event.preventDefault();
 			return;
 		}
-	},
+	};
 
-	displayMatches: function ($this, matches) {		
+    this.displayAll = function()
+    {
+        this.displayMatches(this.matchQuery('%'));
+    };
 
-		var html = this.template({ matches: matches });
-		var offset = $this.offset();
+	this.displayMatches = function (matches) {		
+        var html, offset, $list;
+        
+		html = this.template({ matches: matches });
+		offset = this.$element.offset();
 		
 		// *** shorten this? 
 		this.$display = $("body").find("#autocomplete-matches");
-		if (this.$display.length === 0)
+		if (this.$display.length === 0) {
 			this.$display = $("<div id='autocomplete-matches'></div>")
-				.appendTo("body")
-				.css({position: "absolute", left: offset.left, top: offset.top + $this.outerHeight() + 10, 'z-index': 9});
-				
-		this.$display.html(html);	
+				.appendTo("body");
+        }
+		this.$display.css({position: "absolute", left: offset.left, top: offset.top + this.$element.outerHeight() + 10, 'z-index': 9})
+                .html(html);
+        $list = this.$display.find('.list');
+        $list.jScrollPane();
 
-	},
+        this.bindGlobalEvents();
 
-	selectNext: function () {
+	};
+
+    this.removeDisplay = function() {
+        
+		this.$display.remove();
+        this.unbindGlobalEvents();
+    }
+
+	this.selectNext = function () {
 		if (!this.$display) 
 			return;
 
@@ -132,9 +153,9 @@ rpgt.AutoComplete = {
 			nextMatch = this.$display.find('.list-item:eq(0)')
 		
 		nextMatch.addClass("selected");
-	},
+	};
 
-	selectPrevious: function () {
+	this.selectPrevious = function () {
 		if (!this.$display) 
 			return;
 
@@ -145,26 +166,27 @@ rpgt.AutoComplete = {
 			nextMatch = this.$display.find('.list-item').last();
 		
 		nextMatch.addClass("selected");
-	},
+	};
 
-	selectCurrent: function ($this) {
+	this.selectCurrent = function ($this) {
 
 		if (!this.$display) 
 			return;
 
 		var $selectedMatch = this.$display.find(".selected")		
 		if ($selectedMatch.length > 0) {
-			$this.trigger("autocomplete", [$selectedMatch]);
+			this.$activeElement.trigger("autocomplete", [$selectedMatch]);
 			this.$display.remove();		
 		}
 
-	},
+	};
 
-	matchQuery: function (query, entries) {
+	this.matchQuery = function (query) {
 
 		var specialCharacters = ["^", "$", ".", "*", "+", "?", "=", "!", ":", "|", "\\", "/", "(", ")", "[", "]", "{", "}"];
 
-		var matches, entry, html, regex;
+		var matches, entries, html, regex;
+        entries = this.entries;
 
 		// create a regular expression from the query string;
 		regex = "";
@@ -229,14 +251,31 @@ rpgt.AutoComplete = {
 
 		// sort matches based on fewest separate fragments; fewer fragments means query letters are (more) adjacent, which we'll consider a better match 
 		matches.sort(function (a, b) { return b.adjacents - a.adjacents })
-		// truncate length of return array to max 10
-		if (matches.length > 10) {
-			matches = matches.splice( 0, 10 );
-		}
 
 		return matches;
 
-	}
+	};
 
+    this.unbindGlobalEvents = function()
+    {
+		// remove all handlers that might have been set on the item;
+		$("body").off("click." + namespace);
+		$("body").off("mouseenter", "#autocomplete-matches .list-item");
+    };
+    this.bindGlobalEvents = function()
+    {
+        var self = this;
+        _clickHandler = _.bind(this.clickHandler, this);
+		// set a global click listener;
+		$("body").on("click." + namespace, _clickHandler );
+
+		// set a mouseenter listener for the matches-box;
+		$("body").on("mouseenter", "#autocomplete-matches .list-item", function (event) { 
+			self.$display.find(".selected").removeClass("selected");
+			$(event.target).addClass("selected");
+		});
+        
+    };
+
+    return this;
 }
-

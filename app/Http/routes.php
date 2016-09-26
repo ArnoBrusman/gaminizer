@@ -1,18 +1,95 @@
 <?php
 
 /*
-|--------------------------------------------------------------------------
-| Application Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register all of the routes for an application.
-| It's a breeze. Simply tell Laravel the URIs it should respond to
-| and give it the controller to call when that URI is requested.
-|
-*/
+  |--------------------------------------------------------------------------
+  | Application Routes
+  |--------------------------------------------------------------------------
+  |
+  | Here is where you can register all of the routes for an application.
+  | It's a breeze. Simply tell Laravel the URIs it should respond to
+  | and give it the controller to call when that URI is requested.
+  |
+ */
 
-Route::get('/', function () {
-    return view('welcome');
+//-----------------------------------------------------
+// User Management Frontend Routes
+//-----------------------------------------------------
+Route::group(['prefix' => 'users'], function(){
+    Route::get('create', 'UserController@create');
+});
+Route::get('login', 'LoginController@index');
+Route::post('login', 'LoginController@login');
+
+//-----------------------------------------------------
+// Sheet Routes
+//-----------------------------------------------------
+
+Route::any('sheet/{id}', 'SheetController@index');
+Route::any('init/{id}', 'SheetController@init');
+
+/* -----------------------------------------------------*\
+ * Admin site
+ * ----------------------------------------------------- */
+Route::group([
+    'as' => 'admin::',
+    'namespace' => 'admin',
+    'prefix' => 'admin',
+        ], function() {
+    Route::get('/', 'AdminController@index');
+//    Route::get('/', function(){        return response('test')->header('Content-type', 'text/html'); });
+});
+
+//-----------------------------------------------------
+// Api Routes
+//-----------------------------------------------------
+
+Route::group(['as' => 'restapi::', 'namespace' => 'RestApi', 'prefix' => 'restapi'], function() {
+
+    // Characters controller
+    Route::resource('characters', 'CharactersController', ['parameters' => ['characters' => 'pc']]);
+    Route::group(['as' => 'characters::', 'namespace' => 'Characters', 'prefix' => 'characters/{pc}'], function() {
+        Route::get('stats', 'StatsController@index');
+        Route::get('features', 'FeaturesController@index');
+        Route::get('classes', 'ClassesController@index');
+    });
+
+    // Classes controller
+    Route::any('classes', 'ClassesController@getAll');
+    Route::any('classes/{id}', 'ClassesController@getOne');
+    Route::any('classes/{id}/{any}', 'ClassesController@findData');
+    Route::any('classes/{any}', 'ClassesController@allData');
+
+    // Features controller
+    Route::any('features', 'FeaturesController@index');
+    Route::any('features/{id}', 'FeaturesController@show')
+            ->where(['id' => '[0-9]+']);
+    Route::any('features/{id}/{any}', 'FeaturesController@findData')
+            ->where(['id' => '[0-9]+']);
+    Route::any('features/{any}', 'FeaturesController@allData');
+
+    // Races controller
+    Route::any('races', 'RacesController@getAll');
+    Route::any('races/{id}', 'RacesController@getOne');
+    Route::any('races/{id}/{any}', 'RacesController@findData');
+    Route::any('races/{any}', 'RacesController@allData');
+
+    //-----------------------------------------------------
+    // Stats Elaborate controller
+    //-----------------------------------------------------
+    Route::get('pcstats/', 'PcStatsController@getAll');
+    Route::get('pcstats/{id}', 'PcStatsController@getOne');
+    Route::get('pcstats/{id}/{any}', 'PcStatsController@findData');
+    Route::get('pcstats/{any}', 'PcStatsController@allData');
+    Route::put('pcstats/{id}', 'PcStatsController@updateOne');
+    Route::put('pcstats', 'PcStatsController@updateBatch');
+    // character stats
+    Route::any('characters/{id}/stats', 'CharactersController@stats');
+    
+    //-----------------------------------------------------
+    // User Management
+    //-----------------------------------------------------
+    Route::put('users', 'UsersController@store');
+    
 });
 
 //-----------------------------------------------------
@@ -23,53 +100,7 @@ Route::any('characters/test', 'RestApi\\CharactersController@test');
 //     $response = $this->call('POST', '/restapi/characters/stats',
 //             ['elaborate' => TRUE]);
 //});
-//-----------------------------------------------------
-// Sheet Routes
-//-----------------------------------------------------
-
-Route::any('sheet/{id}', 'SheetController@index');
-Route::any('init/{id}', 'SheetController@init');
-
-//-----------------------------------------------------
-// Api Routes
-//-----------------------------------------------------
-
-// Characters controller
-Route::any('restapi/characters/', 'RestApi\\CharactersController@getAll');
-Route::any('restapi/characters/{id}', 'RestApi\\CharactersController@getOne')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/characters/{id}/{any}', 'RestApi\\CharactersController@findData')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/characters/{any}', 'RestApi\\CharactersController@allData');
-
-// Classes controller
-Route::any('restapi/classes/', 'RestApi\\ClassesController@getAll');
-Route::any('restapi/classes/{id}', 'RestApi\\ClassesController@getOne')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/classes/{id}/{any}', 'RestApi\\ClassesController@findData')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/classes/{any}', 'RestApi\\ClassesController@allData');
-
-// Features controller
-Route::any('restapi/features/', 'RestApi\\FeaturesController@getAll');
-Route::any('restapi/features/{id}', 'RestApi\\FeaturesController@getOne')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/features/{id}/{any}', 'RestApi\\FeaturesController@findData')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/features/{any}', 'RestApi\\FeaturesController@allData');
-
-// Races controller
-Route::any('restapi/races/', 'RestApi\\RacesController@getAll');
-Route::any('restapi/races/{id}', 'RestApi\\RacesController@getOne')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/races/{id}/{any}', 'RestApi\\RacesController@findData')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/races/{any}', 'RestApi\\RacesController@allData');
-
-// Stats Elaborate controller
-Route::any('restapi/pcstats/', 'RestApi\\PcStatsController@getAll');
-Route::any('restapi/pcstats/{id}', 'RestApi\\PcStatsController@getOne')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/pcstats/{id}/{any}', 'RestApi\\PcStatsController@findData')
-        ->where(['id' => '[0-9]+']);
-Route::any('restapi/pcstats/{any}', 'RestApi\\PcStatsController@allData');
+Route::any('test', 'TestController@test');
+Route::any('phpinfo', function(){
+    echo phpinfo();
+});

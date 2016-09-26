@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="" dir="">
+    <head>
+        <link rel="stylesheet" type="text/css" href="/css/form.css">
+        <script type="text/javascript" src="/js/jquery-3.1.0.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                $('#login').submit(function(event){
+                    var $form = $(this);
+                    event.preventDefault();
+                    $.ajax('/restapi/users',
+                    {
+                        beforeSend: sendAuth,
+                        method: 'PUT',
+                        data: $form.serializeArray()
+                    });
+                });
+            });
+            
+            function sendAuth( request ){
+                return request.setRequestHeader("X-CSRF-Token", '{{ csrf_token }}');
+            }
+        </script>
+    </head>
+    <body>
+
+        {% block page %}
+            <form id="login" class="form simple" action="/login">
+                <h1>Create user</h1>
+                <div class="item">
+                    <label>Username: </label><input name="name" type="text" />
+                </div>
+                <div class="item">
+                    <label>password: </label><input name="password" type="password" />
+                </div>
+                <input type="submit" />
+            </form>
+        {% endblock %}
+
+    </body>
+</html>

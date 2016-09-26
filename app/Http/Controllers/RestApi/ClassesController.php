@@ -2,11 +2,6 @@
 
 namespace App\Http\Controllers\RestApi;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Collection;
-
 use Gaminizer\CharacterClass;
 
 class ClassesController extends RestApiController
@@ -16,16 +11,60 @@ class ClassesController extends RestApiController
     // Getters
     //-----------------------------------------------------
     
-    function getAll()
+    function index()
     {
-        $responseData = CharacterClass::all()->toJson();
+        $responseData = CharacterClass::all();
         return response($responseData)->header('Content-type', 'application/json');
     }
 
-    function getOne($id)
+    function show($id)
     {
-        $responseData = CharacterClass::find($id)->toJson();
+        $responseData = CharacterClass::find($id);
         return response($responseData)->header('Content-type', 'application/json');
+    }
+    
+    function update($id)
+    {
+        $class = CharacterClass::find($id);
+        if ($class->exists) {
+            $input = $this->request->all();
+            $success = $class->update($input);
+            if ($success) {
+                return response($class)->header('Content-type', 'application/json');
+            }
+        }
+        
+        abort(500);
+    }
+    
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function store()
+    {
+        $input = $this->request->all();
+        $class = new CharacterClass($input);
+        $newClass = $class->save();
+        if ($class->exists) {
+            return response($newClass)->header('Content-type', 'application/json');
+        } else {
+            abort(500);
+        }
+    }
+
+    public function delete($id)
+    {
+        $class = CharacterClass::find($id);
+        if ($class->exists) {
+            $success = $class->delete();
+            if ($success) {
+                return response(['status' => 'success'])->header('Content-type', 'application/json');
+            }
+        }
+        
+        abort(500);
     }
     
 }

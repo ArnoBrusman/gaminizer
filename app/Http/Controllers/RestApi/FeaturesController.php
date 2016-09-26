@@ -17,13 +17,14 @@ class FeaturesController extends RestApiController
     // Getters
     //-----------------------------------------------------
     
-    function getAll()
+    function index()
     {
-        $responseData = Feature::with('featureable')->get()->toJson();
+//        $responseData = Feature::with('action','spellcasting','proficiencies','statModifiers')->get();
+        $responseData = Feature::with('action','spellcasting','proficiencies','statModifiers')->get();
         return response($responseData)->header('Content-type', 'application/json');
     }
 
-    function getOne($id)
+    function show($id)
     {
         $data = Feature::with('featureable')->find($id)->toJson();
         return response($data)->header('Content-type', 'application/json');

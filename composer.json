@@ -5,18 +5,18 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": ">=5.5.9",
-        "laravel/framework": "5.2.*",
+        "php": ">=5.6.4",
+        "laravel/framework": "5.3.*",
         "rcrowe/twigbridge": "^0.9.2",
-        "barryvdh/laravel-debugbar": "^2.2"
+        "barryvdh/laravel-debugbar": "^2.2",
+        "predis/predis": "^1.1"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
         "mockery/mockery": "0.9.*",
-        "phpunit/phpunit": "~4.0",
-        "symfony/css-selector": "2.8.*|3.0.*",
-        "symfony/dom-crawler": "2.8.*|3.0.*",
-        "mccool/laravel-auto-presenter": "^4.0",
+        "phpunit/phpunit": "~5.0",
+        "symfony/css-selector": "3.1.*",
+        "symfony/dom-crawler": "3.1.*",
         "ytake/laravel-smarty": "~2.0"
     },
     "autoload": {
@@ -26,11 +26,7 @@
         "psr-4": {
             "App\\": "app/",
             "Gaminizer\\": "app/Gaminizer",
-            "Gaminizer\\Presenters\\": "app/Gaminizer/Presenters",
-            "Gaminizer\\ViewComposers\\": "app/Http/ViewComposers",
-            "Gaminizer\\Providers\\": "app/Gaminizer/Providers",
-            "Gaminizer\\Collections\\": "app/Gaminizer/Collections",
-            "App\\Http\\Controllers\\RestApi\\": "app/Http/Controllers/RestApi"
+            "Gaminizer\\ViewComposers\\": "app/Http/ViewComposers"
         }
     },
     "autoload-dev": {

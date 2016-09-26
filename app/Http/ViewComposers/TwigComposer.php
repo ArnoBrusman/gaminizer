@@ -171,4 +171,14 @@ class TwigComposer
         return $L;
     }
   
+    
+    function conditionClass($clazz, $val1, $val2, $inverse = false)
+    {
+        $arr = explode(' ', $val2);
+        $classInArray = in_array($val1, $arr);
+        $returnClass = $classInArray ^ $inverse;
+        return $returnClass ? $clazz : '';
+    }
+        
+    
 }

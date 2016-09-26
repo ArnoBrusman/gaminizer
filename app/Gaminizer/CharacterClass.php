@@ -2,9 +2,16 @@
 
 namespace Gaminizer;
 
-use Illuminate\Database\Eloquent\Model;
-
-class CharacterClass extends Model
-{
-    var $table = 'class';
+class CharacterClass extends Model {
+    
+    protected $table = 'classes';
+    
+    /**
+     * get core narratives
+     */
+    static function core($columns = ['*'])
+    {
+        return self::all($columns)->where('type', 'CORE');
+    }
+    
 }
