@@ -1,42 +1,49 @@
 (function($,_,Backbone,rpgt){
 
-var AutoCompleteGroup = function(id, autoCompleter, handler) {
+/**
+ * 
+ * Collection of formatted Autocomplete entries and event handlers.
+ */
+var AutoCompleteCollection = function(id, entryInput) {
+    
+    if(!id) {
+        id = _.uniqueId('acc');
+    }
+    if(!entryInput) {
+        entryInput = [];
+    }
     
     _.extend(this.prototype, {
         iid: id,
-        collector : autoCompleter, // Methods that gather autocomplete entries. Autocompleters return an array with objects that have an id and value index.
-        collection : [],  // collection of currently set of autocomplete collections
-        handler : handler, // The method that will be called if the autocomplete result is of the collection
+        entryInput : entryInput, // Method that gather autocomplete entries. Autocompleters return an array with objects that have an id and value index.
+        entries : [],  // collection of currently set of autocomplete collections
         
-        resolveCollection: function()
-        {
-            this.setCollectionEntries(_.result(this, collector)) ;
-            return this;
-            
-        },
-        setCollectionEntries: function(entries)
+        reset: function(entries)
         {
             var self = this;
-            this.collection = [];
+            this.entries = [];
+            if(!entries) {
+                entries = _.result(this, 'entryInput');
+            }
             _.each(entries, function(entry){
-                self.addCollectionEntry(entry);
+                self.addEntry(entry);
             });
             return this;
         },
-        addCollectionEntry: function(entryInput) 
+        add: function(entryInput)
         {
-            // TODO: class icon 
+            // TODO: entry icon 
             var string = "%% " + entryInput.name + " %%",
                 html = ["<span>", "</span>"],
                 aCval = this.iid + '/' + entryInput.value,
                 entry = {string: string, html: html, value: aCval};
         
-            this.collection.push(entry);
+            this.entries.push(entry);
             return this;
         },
-        getEntries: function()
+        get: function()
         {
-            return this.collection;
+            return this.entries;
         }
     });
     return this;
@@ -51,32 +58,29 @@ var AutoCompleteGroup = function(id, autoCompleter, handler) {
 /* ---- */
 
 /**
- * Collection of AutoCompleteGroup objects with methods for collection management
+ * Collection of AutoCompleteCollection objects with methods for collection management
  */
-var AutoCompleteGroups = function(options) 
+var AutoCompleteCollections = function(options) 
 {
     _.defaults(options, {
-        groups: [],
-        autoCompleters: {}, // Methods that gather autocomplete entries. Autocompleters return an array with objects that have an id and value index.
-        autoCompleteCollections: {}, // collection of currently set of autocomplete collections
-        autoCompleteHandlers: {}, // The method that will be called if the autocomplete result is of the collection
+        collections: [], // collection of currently set of autocomplete collections
     });
     
-    _.extend(this.prototype, options, {
+    _.extend(this, options, {
         /**
          *  Entries gotten from the autocompleters. Each index has entry result
          *  of the autoCompleter with the same index.
          */
-        resolveCollections: function()
+        resolve: function()
         {
-            _.each(this.groups, function(group) {
-                group.resolveCollection();
+            _.each(this.collections, function(collection) {
+                collection.resolve();
             });
             return this;
         },
         get: function(id) 
         {
-            return _.find(this.groups, function(group) { return group.id === id; });
+            return _.find(this.collections, function(group) { return group.id === id; });
         },
         getEntries: function(collections)
         {
@@ -89,131 +93,59 @@ var AutoCompleteGroups = function(options)
             } else if(_.isString(collections)) {
                 autoCompleteEntries = this.get(collections).collection;
             } else if(_.isUndefined(collections)) {
-                _.each(this.groups, function(group) {
+                _.each(this.collections, function(group) {
                     autoCompleteEntries = group.collection;
                 });
             }
             return autoCompleteEntries;
         },
         
-        addGroup: function(id, collector, handler)
+        add: function(id, entryInput)
         {
-            this.groups.push( new AutoCompleteGroup(id, collector, handler) );
+            this.collections.push( new AutoCompleteCollection(id, entryInput) );
         },
         
-        resolveEntries: function()
+        reset: function()
         {
             var entries = [];
             
-            _.each(this.groups, function(group) {
-                group.resolveCollection();
+            _.each(this.collections, function(collection) {
+                collection.reset();
             });
 
             return entries;
         },
         
-        
-        /* ----------------------------------------------------- *\
-         * Input handlers
-         * NOTE: may want to put the responsibility elsewhere.
-         * ----------------------------------------------------- */
-    
-        _inputs: [], // Autocomplete Objects
-        
-        /**
-         *  get the autoloader entires and initialize input
-         */
-        gatherInputs: function($context)
-        {
-            var self = this, $inputs;
-            this.destroyInputs();
-            
-            if($context) {
-                $inputs = $context.find("[data-auto_entries]");
-            } else {
-                $inputs = $("[data-auto_entries]");
-            }
-            
-            $inputs.each(function()
-            {
-                self.addInput($(this));
-            });
-        },
-        addInput: function($input) 
-        {
-            var ACI,
-            newAutoComplete = new AutoComplete({namespace: this.namespace});
-            ACI = this.getInputEntries($input);
-            newAutoComplete.initialize($input, ACI);
-            this._inputs.push({input: $input, autocomplete: newAutoComplete});
-            return this;
-        },
-        /**
-         * Syncs the collection entries to the autocomplete objects entries
-         */
-        syncEntries: function()
-        {
-            var self = this;
-            _.each(this._inputs, function(input) {
-                var ACI, $input = input.input,
-                autoComplete = input.autocomplete;
-                ACI = self.getInputEntries($input);
-                autoComplete.setEntries(ACI);
-            });
-        },
-        /**
-         * Get autocomplete entries from $input object.
-         */
-        getInputEntries: function($input)
-        {
-            var inputEntries = $input.attr('data-auto_entries'),
-                collections = inputEntries.split(','),
-                autoCompleteEntries = this.getEntries(collections);
-        
-            return autoCompleteEntries;
-        },
-        handler: function(event, $element)
-        {
-            var aCValue = $element.attr("data-autocomplete-value"),
-                match = aCValue.match(/(\w+)\/?(.+)?/),
-                ac_id = match[1],
-                ac_value = match[2];
-            
-            this.get(ac_id).handler(event, ac_value);
-            return this;
-        },
-        destroyInputs: function()
-        {
-            _.each(this._inputs, function(input){ input.autocomplete.unbindGlobalEvents(); });
-            this._inputs = [];
-        }
     });
     
-    this.resolveEntries();
+    this.reset();
     
     return this;
 };
 
-rpgt.views.hasAutoCompleteGroups = function()
+// interface for views to setup autocomplete groups and inputs
+var AutoCompleteInterface = function(View)
 {
-    _.defaults(this.prototype, {
-        autoCompleteGroups : {},
+    this.View = View;
+    this.Collections = new AutoCompleteCollections();
+    
+    _.defaults(this, {
+        $inputs: {},
+        AutoCompletes: {},
+        
+        eventHandlers: {}, 
+        
         initAutocomplete: function() 
         {
-            this.autoCompleteGroups.resolveCollections();
+            this.Collections.resolveCollections();
             this.gatherInputs();
         },
-        showAll: function($field) //show all autocomplete items
+        
+        addGroup: function(groupId, entryInput, onAutoComplete)
         {
-            //TODO: test
-            var acInput = _.filter(this._autoCompleteInputs, function(input) {
-                return input.input.get(0) === $field.get(0);
-            });
-            _.each(acInput, function(input) {
-                input.autocomplete.displayAll();
-            });
+            this.Collections.add(groupId, entryInput);
+            this.eventHandlers[groupId] = onAutoComplete;
         },
-        _aCInputs: [], // Autocomplete Objects
         
         /**
          *  get the autoloader entires and initialize input
@@ -223,7 +155,7 @@ rpgt.views.hasAutoCompleteGroups = function()
             var self = this;
             this.destroyInputs();
             
-            this.$("[data-auto_entries]").each(function()
+            this.View.$("[data-auto_entries]").each(function()
             {
                 self.addInput($(this));
             });
@@ -231,10 +163,34 @@ rpgt.views.hasAutoCompleteGroups = function()
         addInput: function($input)
         {
             var ACI,
-            newAutoComplete = new AutoComplete({namespace: this.namespace});
+                    inputId = _.uniqueId('aci'),
+                    newAutoComplete = new AutoComplete({namespace: inputId});
             ACI = this.getInputEntries($input);
             newAutoComplete.initialize($input, ACI);
-            this._aCInputs.push({input: $input, autocomplete: newAutoComplete});
+            this.AutoCompletes[inputId] = newAutoComplete;
+            this.$inputs[inputId] = $input;
+            return this;
+        },
+        showAll: function(arg) //show all autocomplete items
+        {
+            var inputId = false;
+            if(_.isObject(arg)) { 
+                // given argument is jQuery object
+                //TODO: test
+                var acInput = _.filter(this.$inputs, function($input, index) {
+                    if($input.get(0) === arg.get(0)) {
+                        inputId = index;
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+            } else {
+                inputId = arg;
+            }
+            if(inputId) {
+                this.AutoCompletes[inputId].displayAll();
+            }
             return this;
         },
         /**
@@ -243,51 +199,61 @@ rpgt.views.hasAutoCompleteGroups = function()
         syncEntries: function()
         {
             var self = this;
-            _.each(this._aCInputs, function(input) {
-                var ACI, $input = input.input,
-                autoComplete = input.autocomplete;
-                ACI = self.getInputEntries($input);
+            _.each(this.AutoCompletes, function(autoComplete, inputId) {
+                var ACI,
+                ACI = self.getInputEntries(inputId);
                 autoComplete.setEntries(ACI);
             });
         },
         /**
          * Get autocomplete entries from $input object.
          */
-        getInputEntries: function($input)
+        getInputEntries: function(arg)
         {
-            var inputEntries = $input.attr('data-auto_entries'),
-                collections = inputEntries.split(','),
-                autoCompleteEntries = this.autoCompleteGroups.getEntries(collections);
+            var $input;
+            if(_.isObject(arg)) {
+                $input = arg;
+            } else {
+                $input = this.$inputs[arg];
+            }
+            
+            var inputCollections = $input.attr('data-auto_entries'),
+                collections = inputCollections.split(','),
+                autoCompleteEntries = this.Collections.getEntries(collections);
         
             return autoCompleteEntries;
         },
-        handler: function(event, $element)
+        destroyInputs: function()
+        {
+            _.each(this.AutoCompletes, function(ac){ ac.unbindGlobalEvents(); });
+            this.$inputs = [];
+        },
+        
+        /** handles the autocomplete event */
+        onAutocomplete: function(event, $element)
         {
             var aCValue = $element.attr("data-autocomplete-value"),
                 match = aCValue.match(/(\w+)\/?(.+)?/),
                 ac_id = match[1],
                 ac_value = match[2];
             
-            this.get(ac_id).handler(event, ac_value);
+            this.eventHandlers[ac_id](event, ac_value);
             return this;
         },
-        destroyInputs: function()
-        {
-            _.each(this._aCInputs, function(input){ input.autocomplete.unbindGlobalEvents(); });
-            this._aCInputs = [];
-        }
+        
     });
+    
     return this;
-}
+};
 
-// a registry of form fields that are tied to a model
+// a registry of form fields that are tied to a collection
 var FieldRegistry = function($form, options) {
     var defaultOptions = {
         manageMode: false, // 'model' to write data in into the active model. 'object' to write data into a data object. Leave false if not managing anything and just have it for input
         prefix: function() { // 
             return this.collection.namespace + '_'; 
         }, 
-        collection: {}, // collection with model available for autocomplete
+        collection: {},
         fields: ['id', 'name'], // Name of the model attributes the registry registers fields of. jQuery fields will be gotten from where name="prefix+fieldname"
         activeModel: null, // the beginning active model.
         $fields: {},
@@ -296,7 +262,7 @@ var FieldRegistry = function($form, options) {
     this.options = _.defaults(options, defaultOptions);
     this.$form = $form;
     
-    _.extend(this.prototype, options, Backbone.Events, {
+    _.extend(this, options, Backbone.Events, {
         //-----------------------------------------------------
         // methods
         //-----------------------------------------------------
@@ -437,7 +403,7 @@ var FieldRegistry = function($form, options) {
     return this;
 };
 
-rpgt.views.ModelsForm = Backbone.View.extend(_.defaults({
+rpgt.views.ModelForm = Backbone.View.extend({
 //model: the constructor for new models
 //activeModel: the model that is currenlty being editted.
 
@@ -445,7 +411,7 @@ rpgt.views.ModelsForm = Backbone.View.extend(_.defaults({
 
     models: {}, // model options
 //        models: { //form fill
-//        {collectionName(space)}: {
+//        {group_id}: {
 //          manageMode: false, // 'model' to write data in into the active model. 'object' to write data into a data object. Leave false if not managing anything and just have it for input
 //          data: {} // when readMode 'object' is used, the _readHtml function will put data from html into this data object
 //          activeModel: {},  // model of where the current field values are based on.
@@ -457,15 +423,27 @@ rpgt.views.ModelsForm = Backbone.View.extend(_.defaults({
 //        } //
 
     modelsFields: {}, // collection of model field registries
+    autoComplete: {},
+    autoCompleteConstructor: AutoCompleteInterface,
 
+    initModels: function() //set the modelFields field registries
+    {
+        var self = this;
+        _.each(this.models, function(modelOptions, modelName) {
+            var fieldRegistry = new self.registryConstructor(self.$el, modelOptions);
+            self.modelsFields[modelName] = fieldRegistry;
+        });
+        
+        this.initAutoComplete();
+        
+    },
     renderModelFields: function()
     {
         // set jQuery fields in the _fields properties 
         _.each(this.modelsFields, function(fieldRegistry) {
             fieldRegistry.setFields();
         });
-        this.setModelsAutocompleters();
-        this.setModelsAutocompleteHandler();
+        this.initAutoComplete();
     },
     
     // Read if the model id is in the form html and set it as active model. Needs an entry with they index 'id' in the 'fields' object.
@@ -518,18 +496,6 @@ rpgt.views.ModelsForm = Backbone.View.extend(_.defaults({
             formModel.writeHtml();
         });
     },
-    initModels: function() //set the modelFields field registries
-    {
-        var self = this;
-        _.each(this.models, function(modelOptions, modelName) {
-            var fieldRegistry = new self.registryConstructor(self.$el, modelOptions);
-            self.modelsFields[modelName] = fieldRegistry;
-        });
-        
-        this.setModelsAutoCompleteGroups();
-        
-    },
-        
     /**
      * Updates the activeModel with the values entered in the form
      * @returns {undefined}
@@ -547,46 +513,57 @@ rpgt.views.ModelsForm = Backbone.View.extend(_.defaults({
      * Autocomplete methods
      * ----------------------------------------------------- */
     
-    setModelsAutoCompleteGroups: function()
+    onModelAutoComplete: function(event, value, modelFields)
     {
-        var groups = this.getAutocompleteGroups();
-        
-        this.autoCompleteGroups = new AutoCompleteGroups({
-            groups: groups, 
-        });
+        var modelResult;
+        modelResult = modelFields.collection.get(value);
+        modelFields.setActiveModel(modelResult);
+        event.target.value = modelFields.activeModel.get('name');
     },
-    getAutocompleteGroups: function()
+    
+    initAutoComplete: function()
     {
-        var groups = [];
-        _.each(this.modelsFields, function(modelRegistry, collectionName){
+        this.autoComplete = new this.autoCompleteConstructor(this);
+        this.fillAutoComplete();
+        this.onAutoComplete = this.autoComplete.onAutocomplete;
+    },
+    fillAutoComplete: function()
+    {
+        var self = this;
+        _.each(this.modelsFields, function(fieldRegistry, collectionName){
             
-            var handler = function (event, value) {
-                var modelResult;
-                modelResult = modelRegistry.collection.get(value);
-                modelRegistry.setActiveModel(modelResult);
-                event.target.value = modelRegistry.activeModel.get('name');
-            },
-            autoCompleter = function(){
-                return modelRegistry.collection.createAutoCompleteEntries();
+            onAutoComplete = function (event, value) {
+                self.onModelAutoComplete(event, value, fieldRegistry);
+            };
+            entryInput = function() {
+                var entries = [];
+                fieldRegistry.collection.each(function (model) {
+                    var name = model.get("name"),
+                        value = model.get("id"),
+                        icon; // TODO: collection icons
+                    entries.push({name: name, value: value, icon: icon});
+                });
+                return entries;;
             };
             
-            groups.push( new AutoCompleteGroup(collectionName, autoCompleter, handler) );
+            self.autoComplete.addGroup(collectionName, entryInput, onAutoComplete);
+            
         });
-        return groups;
+        return this;
     },
     
 //        changeWysiwyg: function() {}
-})).hasAutoCompleteGroups();
+});
 
 // A Form View that administers one or more models. Can update, create and delete models it administers.
-rpgt.views.isAdminForm = function ()
+rpgt.views.ModelForm.isAdminForm = function ()
 {
     var _initialize = this.prototype.initialize,
         _render = this.prototype.render,
         Messenger = window.Messenger;
     
     _.defaults(this.prototype.events, {
-        'autocomplete [data-auto_entries]' : 'autoCompleteHandler',
+        'autocomplete [data-auto_entries]' : 'onAutoComplete',
         'click [data-auto_entries]' : 'onShowAll',
         'submit .admin-form': 'onSubmit',
         'click .cancle' : 'reventChanges',
@@ -743,6 +720,8 @@ rpgt.views.isAdminForm = function ()
             e.preventDefault();
             this.showAll($(e.target));
         },
+
+        onAutoComplete: function() {},
 
     });
     _.extend(this.prototype, {
@@ -967,11 +946,11 @@ Backbone.View.containsRelationForms = function ()
     });
     return this;
 };
-rpgt.views.ModelsForm.isRelationForm = function ()
+rpgt.views.ModelForm.isRelationForm = function ()
 {
 	var _initialize = this.prototype.initialize,
         _render = this.prototype.render;
-    _.defaults(this.prototype, Backbone.View.ModelForm(), {
+    _.defaults(this.prototype, {
             autoCompleters: {},
             autoCompleteCollections: {},
             autoCompleteHandlers: {},
@@ -1115,7 +1094,7 @@ rpgt.views.AdminView = Backbone.View.extend({
 
  });
 
-rpgt.views.NarrativeView = rpgt.views.ModelForm({
+rpgt.views.NarrativeView = rpgt.views.ModelForm.extend({
     
     modelName: 'narrative',
     modelNamePlural: 'narratives',
@@ -1151,7 +1130,7 @@ rpgt.views.NarrativeView = rpgt.views.ModelForm({
     
 }).isAdminForm();
 
-rpgt.views.RacesView = rpgt.views.ModelForm({
+rpgt.views.RacesView = rpgt.views.ModelForm.extend({
     
     modelName: 'race',
     modelNamePlural: 'races',
@@ -1174,7 +1153,7 @@ rpgt.views.RacesView = rpgt.views.ModelForm({
     
 }).isAdminForm();
 
-rpgt.views.ClassesView = rpgt.views.ModelForm({
+rpgt.views.ClassesView = rpgt.views.ModelForm.extend({
     
     modelName: 'class',
     modelNamePlural: 'classes',
@@ -1233,7 +1212,7 @@ rpgt.views.NarrativeRelations = Backbone.View.extend({
     
 }).containsRelationForms();
 
-rpgt.views.NarrativeRelation = rpgt.views.ModelForm({
+rpgt.views.NarrativeRelation = rpgt.views.ModelForm.extend({
     
     namespace: 'narrativerelation',
     defaultData: {

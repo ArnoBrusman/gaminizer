@@ -75,8 +75,8 @@
                 <div class="row">
                     <label class="col-sm-3 control-label" for="title">Select Narrative: </label>
                     <div class="col-sm-9">
-                        <input class="form-control input-transparent" data-auto_entries="new,narratives" id="narrative_select" type="text" value="New" />
-                        <input name="id" value="" type="hidden" />
+                        <input class="form-control input-transparent" data-auto_entries="new,narrative" id="narrative_select" type="text" value="New" />
+                        <input name="narrative_id" value="" type="hidden" />
                     </div>
                 </div>
                 <hr />
@@ -90,7 +90,7 @@
                             <div class="form-group">
                                 <label class="col-sm-3 control-label" for="name">Name <span class="required">*</span></label>
                                 <div class="col-sm-9">
-                                    <input type="text" name="name" class="form-control input-transparent"
+                                    <input type="text" name="narrative_name" class="form-control input-transparent"
                                            required="required">
                                 </div>
                             </div>
@@ -99,13 +99,13 @@
                                     description
                                 </label>
                                 <div class="col-sm-9">
-                                    <textarea rows="10" name="description" class="form-control input-transparent wysiwyg" ></textarea>
+                                    <textarea rows="10" name="narrative_description" class="form-control input-transparent wysiwyg" ></textarea>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="description" class="col-sm-3 control-label">description (short)</label>
                                 <div class="col-sm-9">
-                                    <textarea name="description_short" rows="3" name="text" class="form-control input-transparent"></textarea>
+                                    <textarea name="narrative_description_short" rows="3" name="text" class="form-control input-transparent"></textarea>
                                     <span class="help-block">Optional summary of your article that can be used in previews</span>
                                 </div>
                             </div>
@@ -113,14 +113,14 @@
                             <div class="form-group">
                                 <label class="col-sm-3 control-label" for="oddity">Oddity<span class="required">*</span></label>
                                 <div class="col-sm-9">
-                                    <input type="text" name="oddity" class="form-control input-transparent"
+                                    <input type="text" name="narrative_oddity" class="form-control input-transparent"
                                            required="required" data-default="0">
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label class="col-sm-3 control-label" for="type">Type<span class="required">*</span></label>
                                 <div class="col-sm-9">
-                                    <input type="text" name="type" class="form-control input-transparent"
+                                    <input type="text" name="narrative_type" class="form-control input-transparent"
                                            required="required" value="" data-default="CORE">
                                 </div>
                             </div>
@@ -179,11 +179,11 @@
     <script type="text/template" id="narrativefeature_template" >
         <fieldset>
             <legend class="section"></legend>
-            <input type="hidden" name="id" value="<%= id %>" />
+            <input type="hidden" name="feature_id" value="<%= id %>" />
             <div class="form-group">
                 <label class="col-sm-3 control-label"><i>Feature name</i><span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="name" class="form-control input-transparent"
+                    <input type="text" name="feature_name" class="form-control input-transparent"
                            required="required" data-default="0" value="<%= name %>" >
                 </div>
             </div>
@@ -201,7 +201,7 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label">Description<span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <textarea rows="10" name="description" class="form-control input-transparent wysiwyg" ><%= description %></textarea>
+                    <textarea rows="10" name="feature_description" class="form-control input-transparent wysiwyg" ><%= description %></textarea>
                 </div>
             </div>
         </fieldset>
@@ -230,9 +230,9 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name">Proficiency</label>
                 <div class="col-sm-9">
-                <input type="hidden" name="id" value="<%= id %>" />
-                <input type="text" name="name" class="form-control input-transparent"
-                       data-auto_entries="proficiencies" value="<%= name %>" >
+                <input type="hidden" name="proficiency_id" value="<%= id %>" />
+                <input type="text" name="proficiency_name" class="form-control input-transparent"
+                       data-auto_entries="proficiency" value="<%= name %>" >
             </div>
     </script>
     <script id="spellcastingfeatureable_template" type="text/template" >
@@ -250,8 +250,8 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name"><i>class</i><span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="name" class="form-control input-transparent"
-                           data-auto_entries="classes" required="required" data-default="0" value="<%= name %>" >
+                    <input type="text" name="class_name" class="form-control input-transparent"
+                           data-auto_entries="class" required="required" data-default="0" value="<%= name %>" >
                 </div>
             </div>
         </fieldset>
@@ -280,8 +280,8 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name"><i>class</i><span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="name" class="form-control input-transparent"
-                           data-auto_entries="races" required="required" data-default="0" value="<%= name %>" >
+                    <input type="text" name="race_name" class="form-control input-transparent"
+                           data-auto_entries="race" required="required" data-default="0" value="<%= name %>" >
                 </div>
             </div>
         </fieldset>
