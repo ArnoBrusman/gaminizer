@@ -38,6 +38,7 @@ AutoComplete = function(options) {
     this.setEntries = function(entries)
     {
         this.entries = entries;
+        return this;
     };
 	
 	this.clickHandler = function (event) {

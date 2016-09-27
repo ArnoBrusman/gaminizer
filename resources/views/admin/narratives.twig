@@ -51,7 +51,7 @@
                 
                 relationContainers = [rpgt.NarrativeClassRelations, rpgt.NarrativeRaceRelations, rpgt.NarrativeFeatureRelations];
                 //bind events
-                rpgt.NarrativeView.on('narratives:model:update', function(newModel) {
+                rpgt.NarrativeView.on('model:narrative:update', function(newModel) {
                     _.each(relationContainers, function(container) {
                         container.setModel(newModel);
                     });
