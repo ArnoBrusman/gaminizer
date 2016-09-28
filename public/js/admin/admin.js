@@ -4,52 +4,56 @@
  * 
  * Collection of formatted Autocomplete entries and event handlers.
  */
-var AutoCompleteCollection = function(id, entryInput) 
+var AutoCompleteCollection = function(id, entries) 
 {
     
     if(!id) {
         id = _.uniqueId('acc');
     }
-    if(!entryInput) {
-        entryInput = [];
+    if(!entries) {
+        entries = [];
     }
     
     _.extend(this, {
-        iid: id,
-        entryInput : entryInput, // Method that gather autocomplete entries. Autocompleters return an array with objects that have an id and value index.
-        entries : [],  // collection of currently set of autocomplete collections
+        id: id,
+        fetchEntries : entries, // Method that gather autocomplete entries. Autocompleters return an array with objects that have an id and value index.
+        _entries : [],  // collection of rendered autocomplete entries
         
         fetch: function()
         {
-            var entries = _.result(this, 'entryInput');
+            window.console.log(this.fetchEntries);
+            var entries = _.result(this, 'fetchEntries');
+            window.console.log(this._entries);
             this.reset(entries);
         },
         reset: function(entries)
         {
             var self = this;
-            this.entries = [];
-            if(!entries) {
-                entries = [];
-            }
+            this._entries = [];
+            if(!entries) entries = [];
             _.each(entries, function(entry){
                 self.add(entry);
             });
             return this;
         },
-        add: function(entryInput)
+        add: function(entry)
         {
-            // TODO: entry icon 
-            var string = "%% " + entryInput.name + " %%",
-                html = ["<span>", "</span>"],
-                aCval = this.iid + '/' + entryInput.value,
-                entry = {string: string, html: html, value: aCval};
-        
-            this.entries.push(entry);
+            var rEntry = this.renderEntry(entry);
+            
+            this._entries.push(rEntry);
             return this;
         },
+        renderEntry: function(entry)
+        {
+            var string = "%% " + entry.name + " %%",
+                html = ["<span>", "</span>"],
+                aCval = this.id + '/' + entry.value;
+            return {string: string, html: html, value: aCval};
+        },
+        
         get: function()
         {
-            return this.entries;
+            return this._entries;
         },
     });
     return this;
@@ -258,6 +262,9 @@ var AutoCompleteInterface = function(View)
         /** handles the autocomplete event */
         onAutocomplete: function(event, $element)
         {
+                window.console.log('autocompleting');
+                window.console.log($element);
+                window.console.log($element.attr("data-autocomplete-value"));
             var aCValue = $element.attr("data-autocomplete-value"),
                 match = aCValue.match(/(\w+)\/?(.+)?/),
                 ac_id = match[1],
@@ -577,7 +584,6 @@ rpgt.views.ModelForm = Backbone.View.extend({
     {
         this.autoComplete = new this.autoCompleteConstructor(this);
         this.fillAutoComplete();
-        this.onAutoComplete = this.autoComplete.onAutocomplete;
     },
     /** fill the autocomplete interface with autocomplete collection groups */
     fillAutoComplete: function()
@@ -608,6 +614,9 @@ rpgt.views.ModelForm = Backbone.View.extend({
         return this;
     },
     
+    onAutoComplete: function(event, $element) {
+        this.autoComplete.onAutocomplete(event, $element);
+    },
     remove: function() {
         window.console.log('TEST: this remove is called instead of BB default');
         this.autoComplete.destroyInputs();
@@ -667,7 +676,7 @@ rpgt.views.ModelForm.isAdminForm = function ()
          * Setup the form for insertion for a new model.
          * @returns {undefined}
          */
-        setNewForm: function() 
+        setNewForm: function()
         {
             var self = this;
             _.each(this._fields, function($field) {
@@ -749,6 +758,7 @@ rpgt.views.ModelForm.isAdminForm = function ()
             e.preventDefault();
             this.autoComplete.showAll($(e.target));
         },
+        
 
     });
     _.extend(this.prototype, {
