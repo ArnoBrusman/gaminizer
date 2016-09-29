@@ -30,7 +30,7 @@
                 });
                 
                 context = rpgt.NarrativeView;
-                activeModel = rpgt.NarrativeView.activeModel;
+                activeModel = rpgt.NarrativeView.getActiveModel('narrative');
                 
                 rpgt.NarrativeClassRelations = new rpgt.views.NarrativeClassRelations({
                     el: $('#narrativeclasses'),
