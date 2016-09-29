@@ -318,7 +318,7 @@ var FieldRegistry = function(id, $form, options) {
         setFields: function() //the default method of setting the $fields collection based on options given
         {
             var self = this,
-                fields = _.result(this.fields);
+                fields = _.result(this, 'fields');
         
             _.each(fields, function(fieldName) {
                 self.setField(fieldName);
@@ -327,8 +327,9 @@ var FieldRegistry = function(id, $form, options) {
         setField: function(fieldName, $field)
         {
             var prefix = _.result(this, 'prefix');
-            
+                window.console.log('setting field');
             if(_.isUndefined($field)) {
+                window.console.log(this.$form);
                 this.$fields[fieldName] = this.$form.find('name=["' + prefix + fieldName + '"]');
             } else {
                 this.$fields[fieldName] = $field;
