@@ -480,12 +480,16 @@ var ModelFieldRegistry = function(id, $form, options) {
         },
         setModel: function(modelArg)
         {
-            if(!modelArg) { throw Error('given input is not a valid model or model ID'); }
             var newModel;
             if(modelArg instanceof this.collection.model) {
                 newModel = modelArg;
             } else {
                 newModel = this.collection.get(modelArg);
+            }
+            if(!newModel) { 
+                window.console.log(modelArg);
+                window.console.error('given input is not a valid model or model ID'); 
+                return false;
             }
             
             if(newModel instanceof this.collection.model !== true) {
@@ -523,7 +527,9 @@ var ModelFieldRegistry = function(id, $form, options) {
         {
             if( this.readOnStart ) {
                 var id = this.fieldVal('id');
-                this.setModel(id);
+                if(id) {
+                    this.setModel(id);
+                }
             }
             return this;
         },
