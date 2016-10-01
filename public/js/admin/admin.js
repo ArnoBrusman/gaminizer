@@ -6,52 +6,50 @@
  */
 var AutoCompleteEntryGroup = function(attrs) 
 {
-    
-    _.extend(this, {
-        attributes: {
-            id: attrs.id,
-            seed: attrs.seed,
+    _.extend(this.attributes, attrs);
+    return this;
+};
+
+_.extend(AutoCompleteEntryGroup.prototype, {
+    attributes: {
 //            id: 
 //            seed: // Method that gather autocomplete entries. Autocompleters return an array with objects that have an id and value index.
-        },
-        _entries : [],  // collection of rendered autocomplete entries
-        
-        reseed: function()
-        {
-            var entries = _.result(this.attributes, 'seed');
-            this.reset(entries);
-        },
-        reset: function(entries)
-        {
-            this._entries = [];
-            if(!entries) entries = [];
-            _.each(entries, function(entry){
-                this.add(entry);
-            }, this);
-            return this;
-        },
-        add: function(entry)
-        {
-            var rEntry = this.renderEntry(entry);
-            this._entries.push(rEntry);
-            return this;
-        },
-        renderEntry: function(entry)
-        {
-            var string = "%% " + entry.name + " %%",
-                html = ["<span>", "</span>"],
-                aCval = this.attributes.id + '/' + entry.value;
-            return {string: string, html: html, value: aCval};
-        },
-        
-        get: function()
-        {
-            return this._entries;
-        },
-    }, Backbone.Events);
-    return this;
-    
-};
+    },
+    _entries : [],  // collection of rendered autocomplete entries
+
+    reseed: function()
+    {
+        var entries = _.result(this.attributes, 'seed');
+        this.reset(entries);
+    },
+    reset: function(entries)
+    {
+        this._entries = [];
+        if(!entries) entries = [];
+        _.each(entries, function(entry){
+            this.add(entry);
+        }, this);
+        return this;
+    },
+    add: function(entry)
+    {
+        var rEntry = this.renderEntry(entry);
+        this._entries.push(rEntry);
+        return this;
+    },
+    renderEntry: function(entry)
+    {
+        var string = "%% " + entry.name + " %%",
+            html = ["<span>", "</span>"],
+            aCval = this.attributes.id + '/' + entry.value;
+        return {string: string, html: html, value: aCval};
+    },
+
+    get: function()
+    {
+        return this._entries;
+    },
+}, Backbone.Events);
 
 /**
  * Will handle the view's autocompleters when methods are given to the view.
@@ -101,177 +99,10 @@ var AutoCompleteEntryGroups = Backbone.Collection.extend({
 //            entryInput: function() {}
 //        }
 //    }
-var AutoCompleteInterface = function(View)
+var AutoCompleteInterface = function(options)
 {
-    this.View = View;
-    
-    _.extend(this, {
-        EntryGroups: new AutoCompleteEntryGroups(),
-        AutoCompleteConstructor: window.AutoComplete,
-        
-        inputs: {
-            /* Example:
-             * inputId {
-             *    $input: // jquery dom element
-             *    AutoComplete // AutoComplete object
-             *    groups: // array of the id's of the entry groups it uses to seed its autocomplete.
-             * }
-             */            
-        },
-        
-        eventHandlers: {}, // collection of autocomplete event handlers with the same ids as the EntryGroup collection
-        
-        /**
-         * add a collection group
-         */
-        addGroup: function(groupId, seed, onAutoComplete)
-        {
-            this.EntryGroups.add({id: groupId, seed: seed});
-            this.eventHandlers[groupId] = onAutoComplete;
-            return this;
-        },
-        addInput: function($input)
-        {
-            var inputId = _.uniqueId('aci'),
-                    newAutoComplete = new this.AutoCompleteConstructor({namespace: inputId}),
-                    _groups = $input.attr('data-auto_entries').split(','),
-                    groups = _groups ? _groups : [],
-                    ACI = this.getInputEntries(groups);
-            newAutoComplete.initialize($input, ACI);
-            
-            this.inputs[inputId] = {
-                $input: $input,
-                AutoComplete: newAutoComplete,
-                groups: groups,
-            };
-            
-            return this;
-        },
-        
-        
-        /**
-         *  get the autoloader entires and initialize input
-         */
-        gatherInputs: function()
-        {
-            var self = this;
-            this.destroyInputs();
-            
-            this.View.$("[data-auto_entries]").each(function()
-            {
-                self.addInput($(this));
-            });
-            return this;
-        },
-        showAll: function(arg) //show all autocomplete items
-        {
-            var AutoComplete = this.getAutoComplete(arg);
-            if(AutoComplete instanceof this.AutoCompleteConstructor) {
-                AutoComplete.displayAll();
-            } else {
-                throw Error('input not found for: ^');
-            }
-            return this;
-        },
-        getInputId: function($input)
-        {
-            // given argument is jQuery object
-            //TODO: test
-            var inputId = false;
-            _.find(this.inputs, function(input, index) {
-                if($input[0] === input.$input[0]) {
-                    inputId = index;
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-            return inputId;
-        },
-        /**
-         * Reseed the collection entries.
-         */
-        reseed: function()
-        {
-            this.EntryGroups.reseed();
-            _.each(this.inputs, function(input) {
-                var newEntries = this.EntryGroups.getEntries(input.groups);
-                input.AutoComplete.setEntries(newEntries);
-            }, this);
-            return this;
-        },
-        getInput: function(arg)
-        {
-            var inputId;
-            if(arg instanceof $) {
-                inputId = this.getInputId(arg);
-            }
-            if(!this.inputs[inputId]) {
-                return false;
-            } else {
-                return this.inputs[inputId];
-            }
-        },
-        /**
-         * return an array of group Ids
-         */
-        getInputGroups: function(arg)
-        {
-            var input = this.getInput(arg);
-            return input ? input.groups : false;
-        },
-        getAutoComplete: function(arg)
-        {
-            var input = this.getInput(arg);
-            return input ? input.AutoComplete : false;
-        },
-        /**
-         * Get autocomplete entries from $input object.
-         */
-        getInputEntries: function(arg)
-        {
-            var groups, autoCompleteEntries;
-            if (_.isArray(arg)) {
-                    groups = arg;
-            } else {
-                var $input;
-                if(arg instanceof $) {
-                    $input = arg;
-                } else  {
-                    $input = this.getInput(arg);
-                }
-                groups = this.getInputGroups($input);
-            }
-            
-            autoCompleteEntries = this.EntryGroups.getEntries(groups);
-            return autoCompleteEntries;
-        },
-        destroyInputs: function()
-        {
-            _.each(this.inputs, function(input){ input.AutoComplete.unbindGlobalEvents(); });
-            this.inputs = {};
-        },
-        getEventHandler: function(groupId)
-        {
-            return this.eventHandlers[groupId];
-        },
-        
-        /** handles the autocomplete event */
-        onAutocomplete: function(event, $element)
-        {
-            var aCValue = $element.attr("data-autocomplete-value"),
-                match = aCValue.match(/(\w+)\/?(.+)?/),
-                groupId = match[1],
-                ac_value = match[2];
-            
-            var handler = this.getEventHandler(groupId);
-            if(handler) {
-                handler(event, ac_value);
-            }
-            return this;
-        },
-        
-    });
+    options = _.extend({}, options);
+    this.$context = options.context;
     
     var self = this;
     
@@ -284,14 +115,200 @@ var AutoCompleteInterface = function(View)
         });
     });
     
-    if(View.autoCompleteGroups) {
-        _.each(View.autoComplete, function(args, groupId) {
-            this.addGroup(groupId, args.entryInput, args.onAutoComplete)
-        });
+    if(options.groups) {
+        _.each(options.groups, function(args, groupId) {
+            this.addGroup(groupId, args.seed, args.onAutoComplete)
+        }, this);
     }
     
     return this;
 };
+_.extend(AutoCompleteInterface.prototype, {
+    EntryGroups: new AutoCompleteEntryGroups(),
+    AutoCompleteConstructor: window.AutoComplete,
+
+    inputs: {
+        /* Example:
+         * inputId {
+         *    $input: // jquery dom element
+         *    AutoComplete // AutoComplete object
+         *    groups: // array of the id's of the entry groups it uses to seed its autocomplete.
+         * }
+         */            
+    },
+
+    eventHandlers: {}, // collection of autocomplete event handlers with the same ids as the EntryGroup collection
+
+    /**
+     * add a collection group
+     */
+    addGroup: function(groupId, seed, onAutoComplete)
+    {
+        this.EntryGroups.add({id: groupId, seed: seed});
+        this.eventHandlers[groupId] = onAutoComplete;
+        return this;
+    },
+    addInput: function($input)
+    {
+        var inputId = _.uniqueId('aci'),
+                newAutoComplete = new this.AutoCompleteConstructor({namespace: inputId}),
+                _groups = $input.attr('data-auto_entries').split(','),
+                groups = _groups ? _groups : [],
+                ACI = this.getInputEntries(groups);
+        newAutoComplete.initialize($input, ACI);
+
+        this.inputs[inputId] = {
+            $input: $input,
+            AutoComplete: newAutoComplete,
+            groups: groups,
+        };
+
+        return this;
+    },
+
+
+    /**
+     *  get the autoloader entires and initialize input
+     */
+    gatherInputs: function()
+    {
+        var self = this, $fields;
+        this.destroyInputs();
+
+        if($context) {
+            $fields =  $context.find("[data-auto_entries]");
+        } else {
+            $fields =  $("[data-auto_entries]");
+        }
+        $fields.$("[data-auto_entries]").each(function()
+        {
+            self.addInput($(this));
+        });
+
+        return this;
+    },
+    showAll: function(arg) //show all autocomplete items
+    {
+        var AutoComplete = this.getAutoComplete(arg);
+        if(AutoComplete instanceof this.AutoCompleteConstructor) {
+            AutoComplete.displayAll();
+        } else {
+            throw Error('input not found for: ^');
+        }
+        return this;
+    },
+    getInputId: function($input)
+    {
+        // given argument is jQuery object
+        //TODO: test
+        var inputId = false;
+        _.find(this.inputs, function(input, index) {
+            if($input[0] === input.$input[0]) {
+                inputId = index;
+                return true;
+            } else {
+                return false;
+            }
+        });
+        return inputId;
+    },
+    /**
+     * Reseed the collection entries.
+     */
+    reseed: function()
+    {
+        this.EntryGroups.reseed();
+        _.each(this.inputs, function(input) {
+            var newEntries = this.EntryGroups.getEntries(input.groups);
+            input.AutoComplete.setEntries(newEntries);
+        }, this);
+        return this;
+    },
+    getInput: function(arg)
+    {
+        var inputId;
+        if(arg instanceof $) {
+            inputId = this.getInputId(arg);
+        }
+        if(!this.inputs[inputId]) {
+            return false;
+        } else {
+            return this.inputs[inputId];
+        }
+    },
+    /**
+     * return an array of group Ids
+     */
+    getInputGroups: function(arg)
+    {
+        var input = this.getInput(arg);
+        return input ? input.groups : false;
+    },
+    getAutoComplete: function(arg)
+    {
+        var input = this.getInput(arg);
+        return input ? input.AutoComplete : false;
+    },
+    /**
+     * Get autocomplete entries from $input object.
+     */
+    getInputEntries: function(arg)
+    {
+        var groups, autoCompleteEntries;
+        if (_.isArray(arg)) {
+                groups = arg;
+        } else {
+            var $input;
+            if(arg instanceof $) {
+                $input = arg;
+            } else  {
+                $input = this.getInput(arg);
+            }
+            groups = this.getInputGroups($input);
+        }
+
+        autoCompleteEntries = this.EntryGroups.getEntries(groups);
+        return autoCompleteEntries;
+    },
+    destroyInputs: function()
+    {
+        _.each(this.inputs, function(input){ input.AutoComplete.unbindGlobalEvents(); });
+        this.inputs = {};
+    },
+    getEventHandler: function(groupId)
+    {
+        return this.eventHandlers[groupId];
+    },
+
+    /** handles the autocomplete event */
+    onAutocomplete: function(event, $element)
+    {
+        var aCValue = $element.attr("data-autocomplete-value"),
+            match = aCValue.match(/(\w+)\/?(.+)?/),
+            groupId = match[1],
+            ac_value = match[2];
+
+        var handler = this.getEventHandler(groupId);
+        if(handler) {
+            handler(event, ac_value);
+        }
+        return this;
+    },
+
+});
+    
+var FormField = Backbone.View.extend({
+/*
+    attributes: {
+        id: 
+        $field: 
+    }
+*/
+});
+
+var FormFields = Backbone.Collection.extend({
+    
+});
 
 /**
  * Manages input fields in the given form
@@ -300,61 +317,49 @@ var AutoCompleteInterface = function(View)
  *  * parses values from wysiwyg editors and other abstract 
  *  * can easily be seeded by data, function or model
  */
-var FieldRegistry = function($form, options)
-{
-    var defaultOptions = {
-        fields: ['id', 'name'], // Name of the model attributes the registry registers fields of. jQuery fields will be gotten from where name="prefix+fieldname"
-        seed: {}, // either an object, a function that outputs data, or a backbone model. The field will get populated with this data with the `write` function
-        fieldsData: {}, // Read field values are stored here.
-        dynamicUpdate: false, // set to true when the fields should update whenever the dataSeed changes (values).
-    };
-    this.options = _.defaults(options, defaultOptions);
-    _.extend(this, _.pick(options, ['prefix','fields','fieldsData','seed']));
-    
-    this.$form = $form;
-    
-    return this;
-};
-_.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
-    cidPrefix: 'freg',
-    attributes: {
-        // seed,
-        // $fields,
-        // 
-    },
-    $fields: {},
+var FieldRegistry = Backbone.Model.extend({
+    /*
+    attributes: { fieldName : fieldValue }
+     */
+    $fields: [],
+    _$fieldById: {},
 
-    gatherFields: function() //the default method of setting the $fields collection based on options given
+    initialize: function(attributes, options) {
+        var defaultOptions = {
+            prefix: '',
+            fields: ['id', 'name'], // Name of the model attributes the registry registers fields of. jQuery fields will be gotten from where name="prefix+fieldname"
+            seed: {}, // either an object, a function that outputs data, or a backbone model. The field will get populated with this data with the `write` function
+            autoUpdate: false, // set to true when the fields should update whenever the dataSeed changes (values).
+            context: null,
+        };
+        this.options = _.defaults(options, defaultOptions);
+        _.extend(this, _.pick(options, ['prefix','fields','$form','autoUpdate','context']));
+
+        return this;
+    },
+    
+    gather: function() //the default method of setting the $fields collection based on options given
     {
         var fields = _.result(this, 'fields');
 
         _.each(fields, function(fieldName) {
             this.gatherField(fieldName);
         }, this);
+        return this;
     },
     gatherField: function(fieldName)
     {
-        var prefix = _.result(this, 'prefix');
-        this.$fields[fieldName] = this.$form.find('[name="' + prefix + fieldName + '"]');
-    },
-    setField: function(fieldName, $field)
-    {
-        this.$fields[fieldName] = $field;
-    },
-    setSeed: function(seed)
-    {
-        var previousSeed = this.seed;
-        this.seed = seed;
-        this.trigger('change:seed', seed, previousSeed);
+        this._$fieldById[fieldName] = this._fieldByName(fieldName);
         return this;
+    },
+    _fieldByName: function(fieldName)
+    {
+        var prefix = _.result(this, 'prefix');
+        return this.$form.find('[name="' + prefix + fieldName + '"]');
     },
     seedIsModel: function(seed)
     {
         return seed ? (seed instanceof Backbone.Model) : (this.seed instanceof Backbone.Model);
-    },
-    getSeed: function()
-    {
-        return this.seed;
     },
     unsetSeed: function()
     {
@@ -362,17 +367,18 @@ _.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
         this.write();
         this.trigger('change:seed', null, null);
     },
-    /** gets or sets the field value */
+    
+    /** gets or sets the value of the html fields */
     fieldVal: function(field, value)
     {
         if(_.isUndefined(value)) {
             return this._getFieldValue(field);
         } else {
-            return this._writeFieldValue(field, value);
+            return this._writeField(field, value);
         }
     },
     /** Put a field value in the form */
-    _writeFieldValue: function(field, value)
+    _writeField: function(field, value)
     {
         var $field;
         if(field instanceof $) {
@@ -416,7 +422,7 @@ _.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
       this.write(this.seed);
     },
     /** 
-     * Write the data from the current fieldsData object into the fields 
+     * Write the data from the current attributes object into the fields 
      * @param seedOrIndex 
      *    If a string is given, it will only write the field with the same index.
      *    If a seed is given (data object of function), the fiels will be populated with the outcome of that data
@@ -426,15 +432,15 @@ _.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
         var data;
         if(_.isString(seedOrIndex)) {
             data = {};
-            data[seedOrIndex] = this.fieldsData[seedOrIndex];
+            data[seedOrIndex] = this.get(seedOrIndex);
         } else if(seed) {
             data = this.getSeedData(seed);
         } else {
             data = this.fieldsData;
         }
 
-        _.each(data, function(dataPoint, dataName) {
-            var $field = this.$fields[dataName],
+        _.each(data, function(dataPoint, fieldName) {
+            var $field = this.$fields[fieldName],
                 _fieldDefault = $field.attr('data-default'),
                 fieldDefault = _.isUndefined(_fieldDefault) ? '' : _fieldDefault,
                 newFieldVal = dataPoint;
@@ -442,7 +448,7 @@ _.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
             if(!newFieldVal) { newFieldVal = fieldDefault; }
 
             this.fieldVal($field, newFieldVal);
-            this.trigger('write:' + dataName);
+            this.trigger('write:' + fieldName);
         }, this);
 
 
@@ -474,14 +480,14 @@ _.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
             return seedResult;
         }
     },
-    /** read html and put in the object data and return it */
+    /** read html, put in the attributes and return it */
     read: function(fieldName)
     {
         var newData, returnData, fieldVal;
 
         if(fieldName) {
             fieldVal = returnData = this.fieldVal(fieldName)
-            this.fieldsData[fieldName] = fieldVal;
+            this.set(fieldName, fieldVal);
             this.trigger('read:' + fieldName);
         } else {
             _.each(this.$fields, function($field, fieldName) {
@@ -495,7 +501,6 @@ _.extend(FieldRegistry.prototype, Backbone.Model.prototype, Backbone.Events, {
     }
 
 });
-    
 
 
 var NewModelFieldRegistry = function(id, $form, options) {
@@ -733,19 +738,132 @@ var ModelFieldRegistry = function(id, $form, options) {
     return this;
 };
 
-/**
- * 
- * @param {type} View
- * @returns {admin_L1.FieldRegistryInterface}
- */
-var FieldRegistryInterface = function(View)
+var FieldRegistryCollection = Backbone.Collection.extend({
+    initialize: function(attributes, options) {
+        
+    },
+    /** gather fields from the options */
+    gather: function() {
+        _.each(this.registries, function(registry) {
+            registry.gatherFields();
+        }, this);
+    },
+    /** set current field values to values of a given model or the currently active model */
+    write: function(groupId, seed)
+    {
+        if (groupId) {
+            this.registries[groupId].write(seed);
+        } else {
+            _.each(this.registries, function(fieldRegistry) {
+                fieldRegistry.write();
+            });
+        }
+        return this;
+    },
+    setField: function(registryId, name, $field)
+    {
+        var registry = this.get(registryId);
+        registry.setField(name, $field);
+        return this;
+    },
+    reseed: function()
+    {
+        for (var i = 0; i < this.models.length; i++) {
+            var registry = this.models[i];
+            registry.reseed();
+            
+        }
+        return this;
+    },
+});
+
+
+var DataFieldsInterface = function(options)
 {
-    this.View = View;
     
-    this._reset();
+    this.fillAutoComplete();
+    
+    
+    _.each(options.groups, function(groupOptions, groupId) {
+
+        this.addDataGroup(groupId, groupOptions);
+
+        this._dataGroups[groupId] = {};
+        if(groupOptions.manageMode === 'model') {
+            this._dataGroups[groupId].collection = groupOptions.collection.clone();
+            this._dataGroups[groupId].activeModel = groupOptions.activeModel;
+        }
+
+        this.setFieldRegistry(groupId, groupOptions);
+
+    }, this);
+
+    this.initAutoComplete(options);
+    
 }
-var setRegistryOptions = {add: true, replace: true, merge: true};
-var addRegistryOptions = {add: true};
+_.extend(DataFieldsInterface.prototype, {
+    
+    autoCompleteConstructor: AutoCompleteInterface,
+    
+    initAutoComplete: function(options)
+    {
+        var aCOptions = {
+            groups: {},
+            context: options.context
+        };
+        this.autoComplete = new this.autoCompleteConstructor(aCOptions);
+        this.fillAutoComplete();
+        return this;
+    },
+    /** fill the autocomplete interface with autocomplete collection groups */
+    fillAutoComplete: function()
+    {
+        var self = this;
+        _.each(this.dataGroups, function(groupOptions, groupId){
+            
+            var fieldRegistry = this.getGroupRegistry(groupId),
+            onAutoComplete = function (event, value) {
+                    fieldRegistry.setData(value);
+                    fieldRegistry.write();
+                    event.target.value = fieldRegistry.getModel().get('name');
+                    return this;
+            };
+            if(groupOptions.autoComplete.defaults) {
+                var entryInput = function() {
+                    var entries = [];
+                    if(groupOptions.autoComplete.defaults) {
+                        if(groupOptions.type === 'model') {
+                            fieldRegistry.collection.each(function (model) {
+                                var name = model.get("name"),
+                                    value = model.get("id"),
+                                    icon; // TODO: collection icons
+                                entries.push({name: name, value: value, icon: icon});
+                            });
+                        }
+                    }
+                    return entries;
+                };
+
+                if(groupOptions.type === 'model')  {
+                    this.listenTo(fieldRegistry.collection, 'update', this.onFieldRegistryUpdate); //CODE:
+                    this.listenTo(fieldRegistry.collection, 'change:name', this.onFieldRegistryUpdate);
+                    this.listenTo(fieldRegistry.collection, 'change:id', this.onFieldRegistryUpdate);
+                }
+            } else {
+                var entryInput = function() {
+                    if(groupOptions.autoComplete.seed) {
+                        entries.concat(_.result(groupOptions.autoComplete,'seed'));
+                    }
+                    return entries;
+                }
+            }
+            this.autoComplete.addGroup(groupId, entryInput, onAutoComplete);
+        }, this);
+        this.autoComplete.reseed();
+        return this;
+    },
+});
+var FieldRegistryInterface = function(){};
 _.extend(FieldRegistryInterface.prototype, {
     options: {},
 
@@ -769,7 +887,9 @@ _.extend(FieldRegistryInterface.prototype, {
         var RegistryConstructor, fieldRegistry, prevRegistry,
                 replace = options.replace,
                 merge = options.merge,
-                add = options.add;
+                add = options.add,
+                seed = options.seed,
+                $fields = options.$fields;
         if(!registries && options.registryId) {
             registries = options.id;
         }
@@ -784,10 +904,15 @@ _.extend(FieldRegistryInterface.prototype, {
 
         prevRegistry = this.dataGroups[registries].fieldRegistry;
         if((prevRegistry && replace) || !prevRegistry && add ) {
-            fieldRegistry = new RegistryConstructor(this.$el, options);
+            var attributes = {
+                $form: this.$el,
+                $fields: $fields,
+                seed: seed
+            }
+            
+            fieldRegistry = new RegistryConstructor(attributes, options);
             this.dataGroups[registries].fieldRegistry = fieldRegistry;
         } else if(merge) {
-            var seed = options.seed;
             fieldRegistry = prevRegistry;
             if(seed) {
                 fieldRegistry.setSeed(seed);
@@ -876,7 +1001,7 @@ rpgt.views.DataFields = Backbone.View.extend({
         }
     },
     
-    dataGroups: {
+    fieldGroups: {
 /**        dataGroups: { //form fill
         {group_id}: {
             type:  // [ object / model ]
@@ -920,32 +1045,19 @@ rpgt.views.DataFields = Backbone.View.extend({
         default: FieldRegistry,
     },
     
-    fieldRegistryConstructor: FieldRegistryInterface,
-    fieldRegistries: {},
+    dataFieldsConstructor: DataFieldsInterface,
+    dataFields: {},
 
     autoCompleteConstructor: AutoCompleteInterface,
     autoComplete: {},
 
-    initFields: function() // Designed to be called at initialization of this object at default
+    initDataFields: function() // Designed to be called at initialization of this object at default
     {
-        _.each(this.dataGroups, function(groupOptions, groupId) {
-            
-            this.addDataGroup(groupId, groupOptions);
-            
-            this._dataGroups[groupId] = {};
-            if(groupOptions.manageMode === 'model') {
-                this._dataGroups[groupId].collection = groupOptions.collection.clone();
-                this._dataGroups[groupId].activeModel = groupOptions.activeModel;
-            }
-            
-            this.setFieldRegistry(groupId, groupOptions);
-            
-        }, this);
+        this.dataFields = new DataFieldsInterface(_.extend({},this.fieldGroups));
         
-        this.initAutoComplete();
         return this;
     },
-    addDataGroup: function()
+    addDataGroup: function(groupId, options)
     {
         
     },
@@ -957,7 +1069,7 @@ rpgt.views.DataFields = Backbone.View.extend({
         });
         
         // Read if the model id is in the form html and set it as active model. Needs an entry with they index 'id' in the 'fields' object.
-        _.each(this.dataGroups, function(groupOptions, groupName) {
+        _.each(this.fieldGroups, function(groupOptions, groupName) {
             if(groupOptions.readOnRender) {
                 this.getFieldRegistry(groupName).readId();
             }
@@ -966,12 +1078,19 @@ rpgt.views.DataFields = Backbone.View.extend({
         this.autoComplete.gatherInputs();
     },
     
-    remove: function() {
+    remove: function() 
+    {
         this.autoComplete.destroyInputs();
         this._removeElement();
         this.stopListening();
         return this;
     },
+    
+    /* ----------------------------------------------------- *\
+     * DataGroup methods
+     * ----------------------------------------------------- */
+    
+    
     
     /* ----------------------------------------------------- *\
      * Model methods
@@ -1074,17 +1193,11 @@ rpgt.views.DataFields = Backbone.View.extend({
     
     getACInterface: function() 
     { return this.autoComplete; },
-    initAutoComplete: function()
-    {
-        this.autoComplete = new this.autoCompleteConstructor(this);
-        this.fillAutoComplete();
-        return this;
-    },
     /** fill the autocomplete interface with autocomplete collection groups */
     fillAutoComplete: function()
     {
         var self = this;
-        _.each(this.dataGroups, function(groupOptions, groupId){
+        _.each(this.fieldGroups, function(groupOptions, groupId){
             
             var fieldRegistry = this.getGroupRegistry(groupId),
             onAutoComplete = function (event, value) {

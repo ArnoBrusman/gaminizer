@@ -34,7 +34,7 @@ rpgt.apiUrl = "/restapi/";
 Backbone.Model.setGettersSetters = function () {
 
     var _get = this.prototype.get,
-            _set = this.prototype.set
+            _set = this.prototype.set;
 
     _.extend(this.prototype, {
         get: function (attr) {
@@ -83,7 +83,7 @@ Backbone.Model.setGettersSetters = function () {
         // make sure the getters and setters are used when returning model's attributes - if this is desired; 
         // this method "replaces" Backbone's toJSON();
         getAttributes: function () {
-            var response = _.clone(this.attributes)
+            var response = _.clone(this.attributes);
 
             for (var key in response) {
                 response[key] = this.get(key);
@@ -93,7 +93,7 @@ Backbone.Model.setGettersSetters = function () {
 
         }
 
-    })
+    });
 
     return this;
 
