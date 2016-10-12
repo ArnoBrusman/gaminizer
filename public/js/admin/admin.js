@@ -91,6 +91,7 @@ var AutoCompleteEntryGroups = Backbone.Collection.extend({
 
 /* ---- */
 
+/*
 // Interface for views to setup autocomplete groups and inputs
 // All inputs fields with data-auto_entries attribute will be autocompleted with the given collections
 // 
@@ -102,6 +103,7 @@ var AutoCompleteEntryGroups = Backbone.Collection.extend({
 //            entryInput: function() {}
 //        }
 //    }
+*/
 var AutoCompleteInterface = function(options)
 {
     options = _.extend({}, options);
@@ -375,7 +377,6 @@ var FieldRegistry = Backbone.Model.extend({
             self.trigger('write:' + fieldName);
         }, data);
 
-
         this.trigger('write');
         return this;
     },
@@ -388,12 +389,10 @@ var FieldRegistry = Backbone.Model.extend({
         if(!fields) fields = this.fields;
         if(!data) data = this.getPadData();
         var isObject = !_.isArray(fields);
-        
         _.each(fields, function(field, groupName){
             var fieldData = data[field],
                     prefix = namespace ? namespace : '';
             if(isObject) prefix = groupName + '_' + prefix;
-            
             if(_.isString(field)) {
                 itterator(prefix + field, fieldData, data);
             } else if(_.isObject(field)) {
@@ -444,7 +443,7 @@ var FieldRegistry = Backbone.Model.extend({
     //-----------------------------------------------------
 
     getPadData: function(index)
-     {
+    {
         var padResult;
 
         if(this._padIsModel()) {
@@ -477,7 +476,7 @@ var FieldRegistry = Backbone.Model.extend({
     {
         var prevPad = this.pad;
         this.pad = pad;
-        this.trigger('change:pad', pad, prevPad);
+        this.trigger('swap', pad, prevPad);
     },
     getPad: function()
     {
@@ -487,7 +486,7 @@ var FieldRegistry = Backbone.Model.extend({
     {
         this.pad = {};
         this.write();
-        this.trigger('change:pad', null, null);
+        this.trigger('swap', null, null);
     },
     
     //-----------------------------------------------------
@@ -516,7 +515,7 @@ var FieldRegistry = Backbone.Model.extend({
     /** gets or sets the value of the html fields */
     fieldVal: function(field, value, options)
     {
-        if(_.isString(value)) {
+        if(value && !_.isObject(value)) {
             return this._writeField(field, value, options);
         } else {
             return this._getFieldValue(field, value); //value = options
@@ -758,12 +757,12 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     },
     setPad: function(groupId, pad)
     {
-        var groupOptions = this.groups[groupId];
+        var groupOptions = this.groups[groupId],
+                prevPad;
         if (_.isString(pad) && groupOptions.collection) {
             pad = groupOptions.collection.get(pad);
         }
         this.getFields(groupId).setPad(pad);
-        this.trigger('update:' + groupId, null, null);
 //        TODO: CODE:
 //            this.stopListening(previousPad);
 //            if(previousSeed.isNew()) {
@@ -794,11 +793,22 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     },
     _createRegistry: function(groupId, options)
     {
-        var groupOptions = _.extend({},options,{
-            context: this.context,
-            prefix: groupId + '_',
+        var self = this,
+            groupOptions = _.extend({},options,{
+                context: this.context,
+                prefix: groupId + '_',
+            }),
+            newRegistry = new this.RegistryModel({id:groupId}, groupOptions);
+ 
+        // bind forwarded events
+        this.listenTo(newRegistry, "all", function(event) {
+            var eventArgs = arguments,
+                eventSpace = event.replace(/^(.*?)(:.*)?$/, '$1:'+ groupId +'$2');
+            eventArgs[0] = eventSpace;
+            self.trigger.apply(self, eventArgs);
         });
-        return new this.RegistryModel({id:groupId}, groupOptions);
+        
+        return newRegistry;
     },
     /** returns a field registry */
     getFields: function(groupId)
@@ -827,7 +837,6 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     writeHtml: function(groupId, seed)
     {
         this.Registries.write(groupId, seed);
-        this.trigger('html:write');
         return this;
     },
     /**
@@ -837,7 +846,6 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     readHtml: function()
     {
         this.Registries.read();
-        this.trigger('html:read');
         return this;
     },
     
@@ -892,9 +900,17 @@ rpgt.views.DataForm = Backbone.View.extend({
     // Designed to be called at initialization of this object at default
     initDataForm: function() 
     {
+        var self = this;
         this.DataFields = new this.DataFieldsConstructor({
             groups: _.clone(this.fieldGroups),
             context: this.$el,
+        });
+        
+        this.listenTo(this.DataFields, 'all', function(event) {
+            var eventArgs = arguments;
+//                window.console.log(typeof arguments);
+            eventArgs[0] = 'fields:' + event;
+            self.trigger.apply(self, eventArgs);
         });
         
         return this;
@@ -1123,9 +1139,15 @@ rpgt.views.RelationContainer = Backbone.View.extend({
 
 
     nonSetRelations: null,
-    getForeignKey: function() { return _.result(this, 'foreignKey'); },
+    getForeignKey: function() { 
+        var foreignKey = _.result(this, 'foreignKey'); 
+        if(!foreignKey) {
+            foreignKey = this.foreignGroup;
+        }
+        return foreignKey;
+    },
     getThisPad: function() { return this._thisPad; },
-    getForeignObject: function() { 
+    getForeignPads: function() { 
         var pad = this.getThisPad(), object; 
         if(padIsModel(pad)) {
             object = pad.get(this.getForeignKey());
@@ -1137,15 +1159,18 @@ rpgt.views.RelationContainer = Backbone.View.extend({
     setThisPad: function(pad)
     {
         this._thisPad = pad;
-        this.foreignPads = this.getForeignObject();
-        this.setRelationForms();
+            window.console.log('getting foreign pads');
+        var foreignPads = this.getForeignPads();
+        this.setRelationForms(foreignPads);
     },
-    setRelationForms: function()
+    setRelationForms: function(pads)
     {
         this.removeAllForms();
-        for (var i = 0; i < this.foreignPads; i++) {
+            window.console.log('setting relation forms');
+            window.console.log(pads);
+        for (var i = 0; i < pads.length; i++) {
                 window.console.log('adding relation form');
-            this.addRelationForm(this.foreignPads[i]);
+            this.addRelationForm(pads[i]);
         }
     },
     addRelationForm: function(pad)
@@ -1157,8 +1182,8 @@ rpgt.views.RelationContainer = Backbone.View.extend({
         }
         if(!pad) {
             pad = {};
-            this.foreignPads.push(pad);
         }
+        this.foreignPads.push(pad);
 
         groupOptions = {};
         groupOptions[this.thisGroup] = { // current model
@@ -1172,6 +1197,7 @@ rpgt.views.RelationContainer = Backbone.View.extend({
                     pad: pad.pivot,
                 };
         }
+            window.console.log(groupOptions);
 
         relationForm = new this.relationForm({
             fieldGroups: groupOptions,
@@ -1461,7 +1487,7 @@ rpgt.views.ClassesView = rpgt.views.DataForm.extend({
 
 rpgt.views.NarrativeRelations = rpgt.views.RelationContainer.extend({
     
-    thisModel: 'narrative',
+    thisGroup: 'narrative',
     
     relationForm: {},
     events: {
@@ -1552,7 +1578,7 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
 
 rpgt.views.NarrativeClassRelations = rpgt.views.NarrativeRelations.extend({
     
-    foreignModel: 'classes',
+    foreignGroup: 'classes',
     
     relationTemplate: '#narrativeclass_template',
     
@@ -1560,7 +1586,7 @@ rpgt.views.NarrativeClassRelations = rpgt.views.NarrativeRelations.extend({
 
 rpgt.views.NarrativeRaceRelations = rpgt.views.NarrativeRelations.extend({
     
-    foreignModel: 'races',
+    foreignGroup: 'races',
     
     relationTemplate: '#narrativerace_template',
     
@@ -1568,7 +1594,7 @@ rpgt.views.NarrativeRaceRelations = rpgt.views.NarrativeRelations.extend({
 
 rpgt.views.NarrativeFeaturesRelations = rpgt.views.NarrativeRelations.extend({
     
-    foreignModel: 'features',
+    foreignGroup: 'features',
     
     containerSelector: '.granted-features',
     

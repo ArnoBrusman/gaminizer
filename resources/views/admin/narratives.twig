@@ -50,19 +50,15 @@
                 
                 relationContainers = [rpgt.NarrativeClassRelations, rpgt.NarrativeRaceRelations, rpgt.NarrativeFeatureRelations];
                 //bind events
-                rpgt.NarrativeView.on('fields:update', function(newModel) {
+                rpgt.NarrativeView.on('fields:swap:narrative', function(newPad) {
                     _.each(relationContainers, function(container) {
-                        container.setPad(newModel);
+                        container.setThisPad(newPad);
                     });
                 });
                 rpgt.NarrativeView.on('fields:read', function() {
                     _.each(relationContainers, function(container) {
                         container.readHtml();
                     });
-                });
-                
-                rpgt.NarrativeView.on('groups:update:narrative', function() {
-                    window.console.log('group updated');
                 });
                 
                 rpgt.NarrativeView.render();
