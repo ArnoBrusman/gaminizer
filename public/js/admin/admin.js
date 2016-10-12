@@ -1551,6 +1551,9 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
     initialize: function(options)
     {
         _.extend(this,_.pick(options,['modelName','modelNamePlural','relationTemplate']));
+            window.console.log('checking relationTemplate');
+            window.console.log(options);
+            window.console.log(this.relationTemplate);
         this.template = _.template($(this.relationTemplate).html());
         return this;
     },
@@ -1608,6 +1611,7 @@ rpgt.views.NarrativeFeaturesRelations = rpgt.views.NarrativeRelations.extend({
 });
 rpgt.views.NarrativeFeatureRelation = rpgt.views.NarrativeRelation.extend({
     
+    relationTemplate: '#narrativefeature_template',
     hasFeatureable: false,
     fields: ['id','name','description'],
     events: {
