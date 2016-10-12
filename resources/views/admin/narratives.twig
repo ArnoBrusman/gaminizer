@@ -23,46 +23,50 @@
         rpgt.createGlobalResources();
         rpgt.fetchResources([rpgt.Narratives, rpgt.Classes, rpgt.Races, rpgt.Features], {
             success: function () {
-                var activeModel, context, relationContainers;
+                var narrativePad, narrativeRegistry, relationContainers;
                 rpgt.NarrativeView = new rpgt.views.NarrativeView({
                     el: $('#narratives_view'), 
                     collection: rpgt.Narratives
                 });
                 
-                context = rpgt.NarrativeView;
-                activeModel = rpgt.NarrativeView.getActiveModel('narrative');
+                narrativePad = rpgt.NarrativeView.getPad('narrative');
                 
                 rpgt.NarrativeClassRelations = new rpgt.views.NarrativeClassRelations({
                     el: $('#narrativeclasses'),
                     foreignCollection: rpgt.Classes,
-                    activeModel: activeModel
+                    pad: narrativeRegistry,
                 });  
                 
                 rpgt.NarrativeRaceRelations = new rpgt.views.NarrativeRaceRelations({
                     el: $('#narrativeraces'),
                     foreignCollection: rpgt.Races,
-                    activeModel: activeModel
+                    pad: narrativeRegistry,
                 });  
                 rpgt.NarrativeFeatureRelations = new rpgt.views.NarrativeFeaturesRelations({
                     el: $('#narrativefeatures'),
                     foreignCollection: rpgt.Features,
-                    activeModel: activeModel
+                    pad: narrativeRegistry,
                 });  
                 
                 relationContainers = [rpgt.NarrativeClassRelations, rpgt.NarrativeRaceRelations, rpgt.NarrativeFeatureRelations];
                 //bind events
-                rpgt.NarrativeView.on('model:narrative:update', function(newModel) {
+                rpgt.NarrativeView.on('fields:update', function(newModel) {
                     _.each(relationContainers, function(container) {
-                        container.setModel(newModel);
+                        container.setPad(newModel);
                     });
                 });
-                rpgt.NarrativeView.on('html:read', function() {
+                rpgt.NarrativeView.on('fields:read', function() {
                     _.each(relationContainers, function(container) {
                         container.readHtml();
                     });
                 });
                 
+                rpgt.NarrativeView.on('groups:update:narrative', function() {
+                    window.console.log('group updated');
+                });
+                
                 rpgt.NarrativeView.render();
+                
             }
         });
     });
@@ -246,7 +250,7 @@
     <script type="text/template" id="narrativeclass_template" >
         <fieldset>
             <legend class="section"></legend>
-            <input type="hidden" name="id" value="<%= id %>" />
+            <input type="hidden" name="class_id" value="<%= id %>" />
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name"><i>class</i><span class="required">*</span></label>
                 <div class="col-sm-9">
@@ -259,7 +263,7 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="oddity">Oddity<span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="oddity" value="<%= pivot.oddity %>" class="form-control input-transparent"
+                    <input type="text" name="pivot_oddity" value="<%= pivot.oddity %>" class="form-control input-transparent"
                            required="required" data-default="0">
                 </div>
             </div>

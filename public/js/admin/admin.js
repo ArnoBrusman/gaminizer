@@ -8,8 +8,7 @@ var AutoCompleteEntryGroup = function(attrs)
 {
     _.extend(this.attributes, attrs);
     return this;
-};
-
+};-
 _.extend(AutoCompleteEntryGroup.prototype, {
     attributes: {
 //            id: 
@@ -92,8 +91,12 @@ var AutoCompleteEntryGroups = Backbone.Collection.extend({
 
 /* ---- */
 
-// interface for views to setup autocomplete groups and inputs
-//    View.autoCompleteGroups: {
+// Interface for views to setup autocomplete groups and inputs
+// All inputs fields with data-auto_entries attribute will be autocompleted with the given collections
+// 
+// options: {
+//    context
+//    groups: {
 //        collectionName : {
 //            onAutoComplete: function() {},
 //            entryInput: function() {}
@@ -102,7 +105,7 @@ var AutoCompleteEntryGroups = Backbone.Collection.extend({
 var AutoCompleteInterface = function(options)
 {
     options = _.extend({}, options);
-    this.$context = options.context;
+    this.context = options.context;
     
     var self = this;
     
@@ -166,21 +169,24 @@ _.extend(AutoCompleteInterface.prototype, {
         return this;
     },
 
+    $: function(name)
+    {
+        if(this.context) {
+            return this.context.find(name);
+        } else {
+            return $(name);
+        }
+    },
 
     /**
      *  get the autoloader entires and initialize input
      */
-    gatherInputs: function()
+    gather: function()
     {
-        var self = this, $fields;
+        var self = this;
         this.destroyInputs();
 
-        if($context) {
-            $fields =  $context.find("[data-auto_entries]");
-        } else {
-            $fields =  $("[data-auto_entries]");
-        }
-        $fields.$("[data-auto_entries]").each(function()
+        this.$("[data-auto_entries]").each(function()
         {
             self.addInput($(this));
         });
@@ -281,7 +287,7 @@ _.extend(AutoCompleteInterface.prototype, {
     },
 
     /** handles the autocomplete event */
-    onAutocomplete: function(event, $element)
+    onAutoComplete: function(event, $element)
     {
         var aCValue = $element.attr("data-autocomplete-value"),
             match = aCValue.match(/(\w+)\/?(.+)?/),
@@ -296,24 +302,22 @@ _.extend(AutoCompleteInterface.prototype, {
     },
 
 });
-    
-var FormField = Backbone.View.extend({
-/*
-    attributes: {
-        id: 
-        $field: 
-    }
-*/
-});
 
-var FormFields = Backbone.Collection.extend({
-    
-});
+
+//======================================================================
+// Field Registry
+//======================================================================
+
+
+var padIsModel = function(pad)
+{
+    return pad ? (pad instanceof Backbone.Model) : (this.pad instanceof Backbone.Model);
+};
 
 /**
  * Manages input fields in the given form
  * features: 
- *  * consistent fieldsData object, 
+ *  * consistent pad object, 
  *  * parses values from wysiwyg editors and other abstract 
  *  * can easily be seeded by data, function or model
  */
@@ -321,73 +325,225 @@ var FieldRegistry = Backbone.Model.extend({
     /*
     attributes: { fieldName : fieldValue }
      */
-    $fields: [],
-    _$fieldById: {},
+    $fields: {/* { fieldName: $field} */},
 
     initialize: function(attributes, options) {
         var defaultOptions = {
             prefix: '',
             fields: ['id', 'name'], // Name of the model attributes the registry registers fields of. jQuery fields will be gotten from where name="prefix+fieldname"
-            seed: {}, // either an object, a function that outputs data, or a backbone model. The field will get populated with this data with the `write` function
+            seed: {},
+            pad: {}, // either an object or a backbone model. The fields will get populated with this data with the `write` function and read data will be written in the pad.
             autoUpdate: false, // set to true when the fields should update whenever the dataSeed changes (values).
             context: null,
         };
         this.options = _.defaults(options, defaultOptions);
-        _.extend(this, _.pick(options, ['prefix','fields','$form','autoUpdate','context']));
+        _.extend(this, _.pick(this.options, ['prefix','fields','context','pad','seed']));
 
         return this;
     },
     
-    gather: function() //the default method of setting the $fields collection based on options given
+    $: function(selector)
+    {
+        return this.context ? this.context.find(selector) : $(selector);
+    },
+    
+    /** 
+     * Write the data into the fields
+     * @param seedOrIndex 
+     *    If a string is given, it will only write the field with the same index.
+     *    If a seed is given (data object of function), the fiels will be populated with the outcome of that data
+     *    if no param is given, data from the current pad will be written.
+     */
+    write: function(seedOrIndex, options)
+    {
+        var data = {}, self = this;
+        
+        if(_.isObject(seedOrIndex)) {
+            data = seedOrIndex;
+        } else if(_.isString(seedOrIndex)) {
+            data[seedOrIndex] = this.getPadData(seedOrIndex);
+        } else if(_.isArray(seedOrIndex)) {
+            for (var i = 0; i < seedOrIndex.length; i++) {
+                data[seedOrIndex] = this.getPadData(seedOrIndex[i]);
+            }
+        } else {
+            data = this.getPadData();
+        }
+        
+        this._eachField(function(fieldName, fieldData) {
+            self.fieldVal(fieldName, fieldData, _.extend({defaults: true}, options));
+            self.trigger('write:' + fieldName);
+        }, data);
+
+
+        this.trigger('write');
+        return this;
+    },
+    
+    /**
+     * itterate through each this.fields
+     * Kinda over-engineered at the moment. Maybe to be used for 
+     */
+    _eachField: function(itterator, data, fields, namespace) {
+        if(!fields) fields = this.fields;
+        if(!data) data = this.getPadData();
+        var isObject = !_.isArray(fields);
+        
+        _.each(fields, function(field, groupName){
+            var fieldData = data[field],
+                    prefix = namespace ? namespace : '';
+            if(isObject) prefix = groupName + '_' + prefix;
+            
+            if(_.isString(field)) {
+                itterator(prefix + field, fieldData, data);
+            } else if(_.isObject(field)) {
+                this._eachField(itterator, fieldData, field, prefix);
+            } else if(_.isArray(field)) {
+                for (var i = 0; i < field.length; i++) {
+                    itterator(prefix + field, fieldData, data);
+                }
+            }
+        }, this);
+    },
+    _getFieldName: function(field) {
+        if(_.isString(field)) return field;
+        
+        if(_.isObject(field)){
+//            var fieldName, fieldValue = 
+        }
+    },
+    /** read html, put read values on the pad and return it */
+    read: function(fieldName)
+    {
+        var fieldVal;
+
+        if(fieldName) {
+            fieldVal = this.fieldVal(fieldName);
+            this._setPadValue(fieldName, fieldVal);
+        } else {
+            this._eachField(function(fieldName, fieldVal, data) {
+                this._setPadValue(fieldName, fieldVal);
+            });
+        }
+        this.trigger('read');
+        return this.pad;
+    },
+    /**
+     * Write data from the seed into the fields
+     */
+    reseed: function(seed)
+    {
+        if(seed) {
+            this.seed = seed;
+        }
+        this.write(this.seed);
+    },
+    
+    //-----------------------------------------------------
+    // Pad methods
+    //-----------------------------------------------------
+
+    getPadData: function(index)
+     {
+        var padResult;
+
+        if(this._padIsModel()) {
+            padResult = _.clone(this.pad.attributes);
+        } else {
+            padResult = this.pad;
+        }
+
+        return index ? padResult[index] : padResult;
+    },
+    _setPadValue: function(name, value)
+    {
+        if(this._padIsModel()) {
+            this.pad.set(name, value);
+        } else {
+            this.pad[name] = value;
+        }
+        return this;
+    },
+    _padIsModel: function(pad)
+    {
+        return pad ? (padIsModel(pad)) : (padIsModel(this.pad));
+    },
+    /**
+     * Set the pad read data gets written in. If a collection is set and a 
+     * string is given, a model will be attempted to be gotten from the 
+     * collection with the string as id.
+     */
+    setPad: function(pad)
+    {
+        var prevPad = this.pad;
+        this.pad = pad;
+        this.trigger('change:pad', pad, prevPad);
+    },
+    getPad: function()
+    {
+        return this.pad;
+    },
+    unsetPad: function()
+    {
+        this.pad = {};
+        this.write();
+        this.trigger('change:pad', null, null);
+    },
+    
+    //-----------------------------------------------------
+    // field methods
+    //-----------------------------------------------------
+
+    gather: function(fieldName) //the default method of setting the $fields collection based on options given
     {
         var fields = _.result(this, 'fields');
 
-        _.each(fields, function(fieldName) {
+        if(fieldName) {
             this.gatherField(fieldName);
-        }, this);
+        } else {
+            _.each(fields, function(fieldName) {
+                this.gatherField(fieldName);
+            }, this);
+        }
         return this;
     },
     gatherField: function(fieldName)
     {
-        this._$fieldById[fieldName] = this._fieldByName(fieldName);
+        var prefix = _.result(this, 'prefix');
+        this.$fields[fieldName] = this.$('[name="' + prefix + fieldName + '"]');
         return this;
     },
-    _fieldByName: function(fieldName)
-    {
-        var prefix = _.result(this, 'prefix');
-        return this.$form.find('[name="' + prefix + fieldName + '"]');
-    },
-    seedIsModel: function(seed)
-    {
-        return seed ? (seed instanceof Backbone.Model) : (this.seed instanceof Backbone.Model);
-    },
-    unsetSeed: function()
-    {
-        this.seed = {};
-        this.write();
-        this.trigger('change:seed', null, null);
-    },
-    
     /** gets or sets the value of the html fields */
-    fieldVal: function(field, value)
+    fieldVal: function(field, value, options)
     {
-        if(_.isUndefined(value)) {
-            return this._getFieldValue(field);
+        if(_.isString(value)) {
+            return this._writeField(field, value, options);
         } else {
-            return this._writeField(field, value);
+            return this._getFieldValue(field, value); //value = options
         }
     },
     /** Put a field value in the form */
-    _writeField: function(field, value)
+    _writeField: function(field, value, options)
     {
         var $field;
+        options || (options = {}) ;
         if(field instanceof $) {
             $field = field;
         } else if (_.isString(field)) {
             $field = this._getField(field);
         } else {
-            window.console.error('invalid input given');
             return false;
+        }
+        if(!$field) {
+            window.console.error('field not found:');
+            window.console.log(field);
+            return false;
+        }
+        
+        // determine defaults
+        if(options.defaults) {
+            var fieldDefault = $field.attr('data-default') || '';
+            value || (value = fieldDefault);
         }
 
         if($field.hasClass('wysiwyg')) {
@@ -397,7 +553,7 @@ var FieldRegistry = Backbone.Model.extend({
         }
         return this;
     },
-    _getFieldValue: function(field)
+    _getFieldValue: function(field, options)
     {
         var $field, value;
         if(field instanceof $) {
@@ -405,7 +561,9 @@ var FieldRegistry = Backbone.Model.extend({
         } else if (_.isString(field)) {
             $field = this._getField(field);
         }
-
+        if(!$field) {
+            return false;
+        }
         if($field.hasClass('wysiwyg')) {
             value = $field.summernote('code');
         } else {
@@ -417,346 +575,50 @@ var FieldRegistry = Backbone.Model.extend({
     {
         return this.$fields[name];
     },
-    reseed: function()
-    {
-      this.write(this.seed);
-    },
-    /** 
-     * Write the data from the current attributes object into the fields 
-     * @param seedOrIndex 
-     *    If a string is given, it will only write the field with the same index.
-     *    If a seed is given (data object of function), the fiels will be populated with the outcome of that data
-     */
-    write: function(seedOrIndex)
-    {
-        var data;
-        if(_.isString(seedOrIndex)) {
-            data = {};
-            data[seedOrIndex] = this.get(seedOrIndex);
-        } else if(seed) {
-            data = this.getSeedData(seed);
-        } else {
-            data = this.fieldsData;
-        }
-
-        _.each(data, function(dataPoint, fieldName) {
-            var $field = this.$fields[fieldName],
-                _fieldDefault = $field.attr('data-default'),
-                fieldDefault = _.isUndefined(_fieldDefault) ? '' : _fieldDefault,
-                newFieldVal = dataPoint;
-
-            if(!newFieldVal) { newFieldVal = fieldDefault; }
-
-            this.fieldVal($field, newFieldVal);
-            this.trigger('write:' + fieldName);
-        }, this);
-
-
-        this.trigger('write');
-        return this;
-    },
-    getSeedData: function(seedOrIndex, index)
-    {
-        var seedResult, seed;
-        if(_.isString(seedOrIndex)) {
-            index = seedOrIndex;
-        } else if (seedOrIndex) {
-            seed = seedOrIndex;
-        }
-
-        if (!seed) {
-            seed = this.seed;
-        }
-
-        if(this.seedIsModel(seed)) {
-            seedResult = _.clone(this.seed.attributes);
-        } else {
-            seedResult = _.isFunction(seed) ? seed.call(this) : seed;
-        }
-
-        if(index) {
-            return seedResult[index];
-        } else {
-            return seedResult;
-        }
-    },
-    /** read html, put in the attributes and return it */
-    read: function(fieldName)
-    {
-        var newData, returnData, fieldVal;
-
-        if(fieldName) {
-            fieldVal = returnData = this.fieldVal(fieldName)
-            this.set(fieldName, fieldVal);
-            this.trigger('read:' + fieldName);
-        } else {
-            _.each(this.$fields, function($field, fieldName) {
-                newData[fieldName] = this.fieldVal($field);
-                this.trigger('read:' + fieldName);
-            }, this);
-            returnData = _.extend(this.fieldsData, newData);
-        }
-        this.trigger('read');
-        return returnData;
-    }
-
+    
 });
 
-
-var NewModelFieldRegistry = function(id, $form, options) {
-    
-    _.extend(this, FieldRegistry.prototype, {
-        //CODE: Test the FieldRegistry first, then extend it to this one so code isn't duplicated
-    });
-    
-};
-
-// a registry of form input fields that are tied to a model from a collection
-var ModelFieldRegistry = function(id, $form, options) {
-    this.id = id;
-    var defaultOptions = {
-        manageMode: false, // 'model' to write data in into the active model. 'object' to write data into a data object. Leave false if not managing anything and just have it for input
-        prefix: function() { // 
-            return id + '_'; 
-        }, 
-        collection: {},
-        fields: ['id', 'name'], // Name of the model attributes the registry registers fields of. jQuery fields will be gotten from where name="prefix+fieldname"
-        activeModel: null, // the beginning active model.
-        $fields: {},
-        fieldData: {}, // when manageMode is set to 'object', the read field values are stored here.
-        dynamicUpdate: false, // set to true when the fields should update whenever the model changes values.
-    };
-    this.options = _.defaults(options, defaultOptions);
-    this.collection = _.result(this.options,'collection');
-    this.$form = $form;
-    
-    _.extend(this, _.pick(options, ['manageMode','prefix','fields','activeModel']));
-//    _.extend(this, options);
-    _.extend(this, Backbone.Events, {
-        $fields: {},
-        
-        set: function(fieldName, $field) {
-            if(fieldName) {
-                this.setField(fieldName, $field);
-            }
-        },
-        
-        setFields: function() //the default method of setting the $fields collection based on options given
-        {
-            var fields = _.result(this, 'fields');
-        
-            _.each(fields, function(fieldName) {
-                this.setField(fieldName);
-            }, this);
-        },
-        setField: function(fieldName, $field)
-        {
-            var prefix = _.result(this, 'prefix');
-            if(_.isUndefined($field)) {
-                this.$fields[fieldName] = this.$form.find('[name="' + prefix + fieldName + '"]');
-            } else {
-                this.$fields[fieldName] = $field;
-            }   
-        },
-        /** Set the current model Read the ID input value */
-        readId: function()
-        {
-            var id = this.fieldVal('id');
-            if(id) {
-                this.setModel(id);
-            }
-            return this;
-        },
-        /** gets or sets the field value */
-        fieldVal: function(field, value)
-        {
-            if(_.isUndefined(value)) {
-                return this._getFieldValue(field);
-            } else {
-                return this._writeFieldValue(field, value);
-            }
-        },
-        /** Put a field value in the form */
-        _writeFieldValue: function(field, value)
-        {
-            var $field;
-            if(_.isObject(field)) {
-                $field = field;
-            } else if (_.isString(field)) {
-                $field = this._getField(field);
-            }
-
-            if($field.hasClass('wysiwyg')) {
-                $field.summernote('code',value);
-            } else { //TODO: test if type of input field
-                $field.val(value);
-            }
-            return this;
-        },
-        _getFieldValue: function(field)
-        {
-            var $field, value;
-            if(field instanceof $) {
-                $field = field;
-            } else if (_.isString(field)) {
-                $field = this._getField(field);
-            }
-
-            if($field.hasClass('wysiwyg')) {
-                value = $field.summernote('code');
-            } else {
-                value = $field.val();
-            }
-            return value;
-        },
-        _getField: function(name)
-        {
-            return this.$fields[name];
-        },
-        /** 
-         * write the data from the current active model into the fields 
-         * @param model If given, will write in the form from the model object.
-         */
-        write: function(modelArg)
-        {
-            var model;
-            if(modelArg) {
-                model = modelArg;
-            } else if (this.activeModel) {
-                model = this.getModel();
-            }
-            _.each(this.$fields, function($field, fieldName) {
-                var _fieldDefault = $field.attr('data-default'),
-                    fieldDefault = _.isUndefined(_fieldDefault) ? '' : _fieldDefault,
-                    newFieldVal = model.get(fieldName);
-                
-                if(!newFieldVal) { newFieldVal = fieldDefault; }
-
-                this.fieldVal($field, newFieldVal);
-            }, this);
-        },
-        /** read html and put in the object data */
-        read: function()
-        {
-            if(this.manageMode) {
-                var activeModel = this.getModel();
-                var newData = {};
-                _.each(this.$fields, function($field, fieldName) {
-                    newData[fieldName] = this.fieldVal($field);
-                }, this);
-                switch(this.manageMode) {
-                    case 'admin' :
-                    case 'model' :
-                        activeModel.set(newData);
-                        break;
-                    case 'object':
-                        _.extend(this.data, newData);
-                        break;
-                }
-            }
-        },
-        readField: function(fieldName)
-        {
-            if(this.manageMode) {
-                var value = this.fieldVal(fieldName);
-            }
-            if(this.manageMode === 'object') {
-                this.modelData[fieldName] = value;
-            } else if (this.manageMode === 'model') {
-                this.activeModel.set(fieldName, value);
-            }
-            return this;
-        },
-        
-        /* ----------------------------------------------------- *\
-         * Model functions
-         * ----------------------------------------------------- */
-        
-        setModel: function(modelArg)
-        {
-            var newModel;
-            if(modelArg instanceof this.collection.model) {
-                newModel = modelArg;
-            } else {
-                newModel = this.collection.get(modelArg);
-            }
-            if(!newModel) { 
-                window.console.log(modelArg);
-                window.console.error('given input is not a valid model or model ID'); 
-                return false;
-            }
-            
-            if(newModel instanceof this.collection.model !== true) {
-                window.console.error('couldn\'t get model out of given input');
-                window.console.error(modelArg);
-                return this;
-            }
-            
-            // update form input
-            var previousModel = this.activeModel;
-
-            this.activeModel = newModel;
-            this.trigger('model:update', newModel, previousModel);
-            
-            this.stopListening(previousModel);
-            if(previousModel.isNew()) {
-                window.console.log('removing model from collection');
-                this.collection.remove(previousModel.cid);
-            }
-            
-            return this;
-        },
-        getModel: function()
-        {
-            return this.activeModel;
-        },
-        unsetModel: function()
-        {
-            this.activeModel = null;
-            this.write();
-            this.trigger('model:update', null, null);
-        },
-        
-        /********************
-         *  event handlers  *
-         ********************/
-        
-        onModelUpdate: function()
-        {
-            window.console.log('TODO: active model attribute has changed. ');
-        }
-    });
-    
-    this.modelData = options.modelData;
-    if(!this.activeModel && ( this.manageMode === 'admin' || this.manageMode === 'admin' )) {
-        this.activeModel = this.collection.add({});
-    }
-    
-    //set events
-    this.on('model:update', this.onModelUpdate, this);
-    
-    return this;
-};
-
-var FieldRegistryCollection = Backbone.Collection.extend({
+var FieldRegistries = Backbone.Collection.extend({
     initialize: function(attributes, options) {
-        
     },
     /** gather fields from the options */
     gather: function() {
-        _.each(this.registries, function(registry) {
-            registry.gatherFields();
+        _.each(this.models, function(registry) {
+            registry.gather();
         }, this);
     },
     /** set current field values to values of a given model or the currently active model */
-    write: function(groupId, seed)
+    write: function(registryId, seed)
     {
-        if (groupId) {
-            this.registries[groupId].write(seed);
+        if (_.isString(registryId)) {
+            this.get(registryId).write(seed);
         } else {
-            _.each(this.registries, function(fieldRegistry) {
-                fieldRegistry.write();
-            });
+            seed = registryId;
+            for (var i = 0; i < this.models.length; i++) {
+                var registry = this.models[i];
+                registry.write(seed);
+            }
+        }
+        return this;
+    },
+    read: function(registryId)
+    {
+        var pads = [];
+        if (_.isString(registryId)) {
+            this.get(registryId).write();
+        } else {
+            for (var i = 0; i < this.models.length; i++) {
+                var registry = this.models[i];
+                pads.push(registry.read());
+            }
+        }
+        return pads;
+    },
+    reseed: function()
+    {
+        for (var i = 0; i < this.models.length; i++) {
+            var registry = this.models[i];
+            registry.reseed();
         }
         return this;
     },
@@ -766,44 +628,47 @@ var FieldRegistryCollection = Backbone.Collection.extend({
         registry.setField(name, $field);
         return this;
     },
-    reseed: function()
-    {
-        for (var i = 0; i < this.models.length; i++) {
-            var registry = this.models[i];
-            registry.reseed();
-            
-        }
-        return this;
-    },
 });
 
+//-----------------------------------------------------
+// Data field
+//-----------------------------------------------------
 
 var DataFieldsInterface = function(options)
 {
+    this.options = options || {};
+    this.context = options.context;
+    this.groups = options.groups || {};
+    this.initGroups(options);
+};
+_.extend(DataFieldsInterface.prototype, Backbone.Events, {
     
-    this.fillAutoComplete();
+    groups: {},
     
+    initGroups: function(options)
+    {
+        this.initRegistries(options);
+        this.initAutoComplete(options);
+        this.fillAutoComplete(options.groups, options);
+    },
+    addGroup: function(groupId, options)
+    {
+        this.Registries.add( this._createRegistry(groupId, options) );
+        this.addAutoCompleteGroup(groupId, options);
+        this.groups[groupId] = options;
+        return this;
+    },
+    gather: function()
+    {
+        this.Registries.gather();
+        this.AutoComplete.gather();
+    },
     
-    _.each(options.groups, function(groupOptions, groupId) {
-
-        this.addDataGroup(groupId, groupOptions);
-
-        this._dataGroups[groupId] = {};
-        if(groupOptions.manageMode === 'model') {
-            this._dataGroups[groupId].collection = groupOptions.collection.clone();
-            this._dataGroups[groupId].activeModel = groupOptions.activeModel;
-        }
-
-        this.setFieldRegistry(groupId, groupOptions);
-
-    }, this);
-
-    this.initAutoComplete(options);
+    /* ----------------------------------------------------- *\
+     * Autocomplete methods
+     * ----------------------------------------------------- */
     
-}
-_.extend(DataFieldsInterface.prototype, {
-    
-    autoCompleteConstructor: AutoCompleteInterface,
+    AutoCompleteConstructor: AutoCompleteInterface,
     
     initAutoComplete: function(options)
     {
@@ -811,188 +676,183 @@ _.extend(DataFieldsInterface.prototype, {
             groups: {},
             context: options.context
         };
-        this.autoComplete = new this.autoCompleteConstructor(aCOptions);
-        this.fillAutoComplete();
+        this.AutoComplete = new this.AutoCompleteConstructor(aCOptions);
         return this;
     },
     /** fill the autocomplete interface with autocomplete collection groups */
-    fillAutoComplete: function()
+    fillAutoComplete: function(dataGroups)
     {
-        var self = this;
-        _.each(this.dataGroups, function(groupOptions, groupId){
-            
-            var fieldRegistry = this.getGroupRegistry(groupId),
-            onAutoComplete = function (event, value) {
-                    fieldRegistry.setData(value);
-                    fieldRegistry.write();
-                    event.target.value = fieldRegistry.getModel().get('name');
-                    return this;
-            };
-            if(groupOptions.autoComplete.defaults) {
-                var entryInput = function() {
-                    var entries = [];
-                    if(groupOptions.autoComplete.defaults) {
-                        if(groupOptions.type === 'model') {
-                            fieldRegistry.collection.each(function (model) {
-                                var name = model.get("name"),
-                                    value = model.get("id"),
-                                    icon; // TODO: collection icons
-                                entries.push({name: name, value: value, icon: icon});
-                            });
-                        }
-                    }
-                    return entries;
-                };
-
-                if(groupOptions.type === 'model')  {
-                    this.listenTo(fieldRegistry.collection, 'update', this.onFieldRegistryUpdate); //CODE:
-                    this.listenTo(fieldRegistry.collection, 'change:name', this.onFieldRegistryUpdate);
-                    this.listenTo(fieldRegistry.collection, 'change:id', this.onFieldRegistryUpdate);
-                }
-            } else {
-                var entryInput = function() {
-                    if(groupOptions.autoComplete.seed) {
-                        entries.concat(_.result(groupOptions.autoComplete,'seed'));
-                    }
-                    return entries;
+        _.each(dataGroups, function(groupOptions, groupId){
+            this.addAutoCompleteGroup(groupId, groupOptions);
+        }, this);
+        this.AutoComplete.reseed();
+        return this;
+    },
+    addAutoCompleteGroup: function(groupId, options)
+    {
+        var self = this,
+        onAutoComplete = function (event, value) {
+                var fieldRegistry = self.getFields(groupId);
+                self.setPad(groupId,value);
+                self.writeHtml(groupId);
+                event.target.value = fieldRegistry.getPadData('name');
+                return this;
+        };
+        options.autoComplete || (options.autoComplete = {});
+        var aCSeed = function() {
+            var entries = [];
+            if(options.autoComplete.defaults !== false) {
+                if(options.collection) {
+                    options.collection.each(function (model) {
+                        var name = model.get("name"),
+                            value = model.get("id"),
+                            icon; // TODO: collection icons
+                        entries.push({name: name, value: value, icon: icon});
+                    });
                 }
             }
-            this.autoComplete.addGroup(groupId, entryInput, onAutoComplete);
-        }, this);
-        this.autoComplete.reseed();
-        return this;
-    },
-});
-var FieldRegistryInterface = function(){};
-_.extend(FieldRegistryInterface.prototype, {
-    options: {},
 
-    registries: [],
-    _byId: {},
-
-    /** gather fields from the options */
-    gather: function() {
-        _.each(this.registries, function(registry) {
-            registry.gatherFields();
-        }, this);
-    },
-
-    add: function(registryId, options)
-    {
-        return this.set(registryId, _.extend({replace: false, merge: false}, options, addRegistryOptions));
-    },
-    set: function(registries, options)
-    {
-        if(!registries && !this.primary) return;
-        var RegistryConstructor, fieldRegistry, prevRegistry,
-                replace = options.replace,
-                merge = options.merge,
-                add = options.add,
-                seed = options.seed,
-                $fields = options.$fields;
-        if(!registries && options.registryId) {
-            registries = options.id;
-        }
-
-        options = _.extend({}, setRegistryOptions, options);
-
-        if(options.registryType && this.RegistryConstructors[options.registryType]) {
-            RegistryConstructor = this.RegistryConstructors[options.registryType];
-        } else {
-            RegistryConstructor = this.RegistryConstructors.default;
-        }
-
-        prevRegistry = this.dataGroups[registries].fieldRegistry;
-        if((prevRegistry && replace) || !prevRegistry && add ) {
-            var attributes = {
-                $form: this.$el,
-                $fields: $fields,
-                seed: seed
+            if(options.autoComplete.seed) {
+                entries.concat(_.result(options.autoComplete,'seed'));
             }
-            
-            fieldRegistry = new RegistryConstructor(attributes, options);
-            this.dataGroups[registries].fieldRegistry = fieldRegistry;
-        } else if(merge) {
-            fieldRegistry = prevRegistry;
-            if(seed) {
-                fieldRegistry.setSeed(seed);
-            }
-        }
-        return fieldRegistry;
-    },
-    get: function(obj)
-    {
-        if(!obj && this.primary) { obj = this.primary; }
-        return _.find(this.registries, function(groups) {
-            return groups.id === obj; 
-        });
-    },
-    /** set current field values to values of a given model or the currently active model */
-    write: function(groupId, seed)
-    {
-        if (groupId) {
-            this.registries[groupId].write(seed);
-        } else {
-            _.each(this.registries, function(fieldRegistry) {
-                fieldRegistry.write();
-            });
-        }
-        return this;
-    },
-    setField: function(registryId, name, $field)
-    {
-        var registry = this.get(registryId);
-        registry.setField(name, $field);
-        return this;
-    },
 
-    writeHtml: function()
+            return entries;
+        };
+
+        if(options.collection) {
+            this.listenTo(options.collection, 'update', this.reseedAutoComplete); //CODE:
+            this.listenTo(options.collection, 'change:name', this.reseedAutoComplete);
+            this.listenTo(options.collection, 'change:id', this.reseedAutoComplete);
+        }
+
+        this.AutoComplete.addGroup(groupId, aCSeed, onAutoComplete);
+    },
+    
+    onAutoComplete: function(event, $element, fieldRegistry)
     {
-        _.each(this.registries, function(registry){
-            registry.write();
-        });
+        this.AutoComplete.onAutoComplete(event, $element, fieldRegistry);
         return this;
     },
-
+    /** called on collection change */
+    reseedAutoComplete: function()
+    {
+        this.AutoComplete.reseed();
+    },
+    
+    /* ----------------------------------------------------- *\
+     * Model/Pad methods
+     * ----------------------------------------------------- */
+    
+    getPads: function()
+    {
+        var registries = this.Registries.models,
+                pads = [];
+        for (var i = 0; i < registries.length; i++) {
+            pads.push(registries[i].getPad());
+        }
+        return pads;
+    },
+    getPad: function(groupId)
+    {
+        return this.Registries.get(groupId);
+    },
+    setPad: function(groupId, pad)
+    {
+        var groupOptions = this.groups[groupId];
+        if (_.isString(pad) && groupOptions.collection) {
+            pad = groupOptions.collection.get(pad);
+        }
+        this.getFields(groupId).setPad(pad);
+        this.trigger('update:' + groupId, null, null);
+//        TODO: CODE:
+//            this.stopListening(previousPad);
+//            if(previousSeed.isNew()) {
+//                window.console.log('removing model from collection');
+//                this.seedCollection.remove(previousSeed.cid);
+//            }
+//            
+        return this;
+    },
+    
+    /* ----------------------------------------------------- *\
+     * FieldRegistry functions
+     * ----------------------------------------------------- */
+    
+    RegistryModel: FieldRegistry,
+    RegistryCollection: FieldRegistries,
+    Registries: {},
+    
+    initRegistries: function(options)
+    {
+        var registries = [],
+                collectionOptions = {model: this.RegistryModel};
+        for (var groupId in options.groups) {
+            var registry = this._createRegistry(groupId, options.groups[groupId]);
+            registries.push(registry);
+        }
+        this.Registries = new this.RegistryCollection(registries, collectionOptions);
+    },
+    _createRegistry: function(groupId, options)
+    {
+        var groupOptions = _.extend({},options,{
+            context: this.context,
+            prefix: groupId + '_',
+        });
+        return new this.RegistryModel({id:groupId}, groupOptions);
+    },
+    /** returns a field registry */
+    getFields: function(groupId)
+    {
+        return this.Registries.get(groupId);
+    },
     revertChanges: function()
     {
-        _.each(this.registries, function(registry){
-            registry.reseed();
-        });
+        this.Registries.reseed();
         return this;
     },
-
+    
+    /**
+     * Read id and set pad accordingly.
+     */
+    readId: function()
+    {
+        _.each(this.groups, function(groupOptions, groupName) {
+            var id = this.getFields(groupName).fieldVal('id');
+            if(id) {
+                this.setPad(groupName,id);
+            }
+        }, this);
+    },
+    
+    writeHtml: function(groupId, seed)
+    {
+        this.Registries.write(groupId, seed);
+        this.trigger('html:write');
+        return this;
+    },
     /**
      * Updates the activeModel with the values entered in the form
      * @returns {undefined}
      */
     readHtml: function()
     {
-        _.each(this.registries, function(fieldRegistry) {
-            fieldRegistry.read();
-        });
+        this.Registries.read();
         this.trigger('html:read');
         return this;
     },
-
-    _reset: function() {
-        this.length = 0;
-        this.models = [];
-        this._byId  = {};
-    },
-
+    
 });
 
 /** 
  * View that groups fields in the view and adds functionality to it. 
  *  Features: Autocomplete * sub-datafields * model management
  */
-rpgt.views.DataFields = Backbone.View.extend({
+rpgt.views.DataForm = Backbone.View.extend({
+    primaryGroup: null,
     _defaultGroupOptions: {
         type: 'model',
-        readOnRender: false,
+        readOnRender: true,
         registryType: 'data',
-        manageMode: 'model',
         writeMode: false,
         inputData: {},
         fields: ['id', 'name'],
@@ -1002,80 +862,66 @@ rpgt.views.DataFields = Backbone.View.extend({
     },
     
     fieldGroups: {
-/**        dataGroups: { //form fill
+/**        
         {group_id}: {
-            type:  // [ object / model ]
-            registryType: // the type of registry that gets used.
-            readOnStart: true, // If the model has a id input and this is set to true, the other model inputs will have the input value of the model with the same id.
+            registryType: // the type of registry that gets used. 
+            readOnRender: true, // If the model has a id input and this is set to true, the other model inputs will have the input value of the model with the same id.
             manageMode:  //'model' to put the read data in into the active model. 'object' to put read data into a data object. Leave false if not managing anything and just have it for input
-            writeMode: false, // 'model' to write data from an active model. 'object' to write data into a data object. Leave false if not managing anything and just have it for input
-            inputData: {} // when readMode 'object' is used, the _readHtml function will put data from html into this data object            
             prefix: '' // prefix = groupName + '_' // will be set in FieldsRegistry
             fields : [] // list of fields that get managed by the group
-            $fields : {} // collection of jQuery objects representing the fields. @Example: { id: $idField, name: $nameField} 
             
-            // options for when type is model
-            activeModel: {},  // model of where the current field values are based on.
-            collection: {}, // collection with model available for autocomplete
+            pad: {},  // As in 'notepad'. Object, or model that gets filled in by the fields.
             
+            // options for when padtype is model
+            collection: {}, // collection with models available for autocomplete
+            model: {} // constructer for the model. If not set, but collection with model property is set, constructor will be gotten from collection
+        
             // options for autocomplete
             autoComplete: false OR {
                 defaults: true // include default autocomplete entry seeds & event handlers
                 seed: {} // collection of autocomplete entries or function that returns entries.
-            } 
+                onAutoComplete: // function that gets called on autocomplete event
+            }
         },
-        } */
+*/
     }, // group options
     
-    _dataGroups: { // Group runtime data
-        /* Example:
-         * groupName: {
-         *   fieldRegistry: // the field registry object
-         *   
-         *   // if managemode === '
-         *   activeModel: 
-         *   collection: {}
-         * }
-         */
-    }, 
-    
-    RegistryConstructors: {
-        data: FieldRegistry,
-        model: ModelFieldRegistry,
-        default: FieldRegistry,
-    },
-    
-    dataFieldsConstructor: DataFieldsInterface,
-    dataFields: {},
+    DataFieldsConstructor: DataFieldsInterface,
+    DataFields: {},
 
-    autoCompleteConstructor: AutoCompleteInterface,
-    autoComplete: {},
-
-    initDataFields: function() // Designed to be called at initialization of this object at default
+    // Designed to be called at initialization of this object at default
+    initDataForm: function() 
     {
-        this.dataFields = new DataFieldsInterface(_.extend({},this.fieldGroups));
+        this.DataFields = new this.DataFieldsConstructor({
+            groups: _.clone(this.fieldGroups),
+            context: this.$el,
+        });
         
         return this;
     },
-    addDataGroup: function(groupId, options)
+    renderDataForm: function()
     {
-        
+        this.DataFields.gather();
+        this.DataFields.readId();
     },
-    renderFields: function()
+    
+    getFields: function(groupId)
     {
-        // set jQuery fields in the _fields properties 
-        _.each(this.groupRegistries, function(fieldRegistry) {
-            fieldRegistry.setFields();
-        });
-        
-        // Read if the model id is in the form html and set it as active model. Needs an entry with they index 'id' in the 'fields' object.
-        _.each(this.fieldGroups, function(groupOptions, groupName) {
-            if(groupOptions.readOnRender) {
-                this.getFieldRegistry(groupName).readId();
-            }
-        }, this);
-        
-        this.autoComplete.gatherInputs();
+        return this.DataFields.getFields(groupId);
+    },
+    
+    getPad: function(groupId) {
+        if(!groupId && this.primaryGroup) {
+            groupId = _.result(this,'primaryGroup');
+        }
+        return this.DataFields.getFields(groupId).getPad();
+    },
+    setPad: function(groupId, pad) {
+        if(!_.isString(groupId) && this.primaryGroup) {
+            pad = groupId;
+            groupId = _.result(this,'primaryGroup');
+        }
+        return this.getField(groupId).setPad(pad);
     },
     
     remove: function() 
@@ -1086,452 +932,48 @@ rpgt.views.DataFields = Backbone.View.extend({
         return this;
     },
     
-    /* ----------------------------------------------------- *\
-     * DataGroup methods
-     * ----------------------------------------------------- */
-    
-    
-    
-    /* ----------------------------------------------------- *\
-     * Model methods
-     * ----------------------------------------------------- */
-    
-    getActiveModels: function()
-    {
-        var models = [];
-        _.each(this.groupRegistries, function(registry){
-            models.push(registry.getModel());
-        });
-        return models;
-    },
-    getActiveModel: function(groupId)
-    {
-        var modelFields = this.getFieldRegistry(groupId);
-        return modelFields ? modelFields.getModel() : false;
-    },
-    setActiveModel: function(dataGroupId, model)
-    {
-        this.getFieldRegistry(dataGroupId).setModel(model);
-        this.trigger('update:' + dataGroupId, null, null);
-//        TODO: CODE:
-//            this.stopListening(previousSeed);
-//            if(previousSeed.isNew()) {
-//                window.console.log('removing model from collection');
-//                this.seedCollection.remove(previousSeed.cid);
-//            }
-//            
-        return this;
-    },
-    unsetModel: function(modelName)
-    {
-        this.groupRegistries[modelName].unsetModel();
-        this.trigger(modelName + ':model:update', null, null);
-        return this;
-    },
-    
-    /* ----------------------------------------------------- *\
-     * FieldRegistry functions
-     * ----------------------------------------------------- */
-    
-    initFieldRegistries: function()
-    {
-        this.fieldRegistries = new this.fieldRegistryConstructor(this);
-    },
-    setFieldRegistry: function(groupId, options)
-    {
-        this.fieldRegistries.set(groupId, options);
-        return this;
-    },
-    getFieldRegistry: function(groupId)
-    {
-        return this.fieldRegistries.get(groupId);
-    },
-    /** set current field values to values of a given model or the currently active model */
-    writeGroup: function(groupId, seed)
-    {
-        this.fieldRegistries.write(groupId, seed);
-        return this;
-    },
-    setGroupField: function(groupId, name, $field)
-    {
-        var registry = this.fieldRegistries.setField(groupId, name, $field).set;
-        return this;
-    },
-    
-    writeHtml: function()
-    {
-        _.each(this.groupRegistries, function(registry){
-            registry.write();
-        });
-        return this;
-    },
-    
-    revertChanges: function()
-    {
-        _.each(this.groupRegistries, function(registry){
-            registry.reseed();
-        });
-        return this;
-    },
-    
-    /**
-     * Updates the activeModel with the values entered in the form
-     * @returns {undefined}
-     */
-    readHtml: function()
-    {
-        _.each(this.groupRegistries, function(fieldRegistry) {
-            fieldRegistry.read();
-        });
-        this.trigger('html:read');
-        return this;
-    },
-    
-    /* ----------------------------------------------------- *\
-     * Autocomplete methods
-     * ----------------------------------------------------- */
-    
-    getACInterface: function() 
-    { return this.autoComplete; },
-    /** fill the autocomplete interface with autocomplete collection groups */
-    fillAutoComplete: function()
-    {
-        var self = this;
-        _.each(this.fieldGroups, function(groupOptions, groupId){
-            
-            var fieldRegistry = this.getGroupRegistry(groupId),
-            onAutoComplete = function (event, value) {
-                    fieldRegistry.setData(value);
-                    fieldRegistry.write();
-                    event.target.value = fieldRegistry.getModel().get('name');
-                    return this;
-            };
-            if(groupOptions.autoComplete.defaults) {
-                var entryInput = function() {
-                    var entries = [];
-                    if(groupOptions.autoComplete.defaults) {
-                        if(groupOptions.type === 'model') {
-                            fieldRegistry.collection.each(function (model) {
-                                var name = model.get("name"),
-                                    value = model.get("id"),
-                                    icon; // TODO: collection icons
-                                entries.push({name: name, value: value, icon: icon});
-                            });
-                        }
-                    }
-                    return entries;
-                };
-
-                if(groupOptions.type === 'model')  {
-                    this.listenTo(fieldRegistry.collection, 'update', this.onFieldRegistryUpdate); //CODE:
-                    this.listenTo(fieldRegistry.collection, 'change:name', this.onFieldRegistryUpdate);
-                    this.listenTo(fieldRegistry.collection, 'change:id', this.onFieldRegistryUpdate);
-                }
-            } else {
-                var entryInput = function() {
-                    if(groupOptions.autoComplete.seed) {
-                        entries.concat(_.result(groupOptions.autoComplete,'seed'));
-                    }
-                    return entries;
-                }
-            }
-            this.autoComplete.addGroup(groupId, entryInput, onAutoComplete);
-        }, this);
-        this.autoComplete.reseed();
-        return this;
-    },
-    fillGroupAutoComplete: function(groupId, options)
-    {
-        var self = this,
-            fieldRegistry = this.getFieldRegistry(groupId),
-            onAutoComplete = function (event, value) {
-                self.onDataAutoComplete(event, value, fieldRegistry);
-            };
-        if(options.autoComplete.defaults) {
-            var entryInput = function() {
-                var entries = [];
-                if(options.autoComplete.defaults) {
-                    if(options.type === 'model') {
-                        fieldRegistry.collection.each(function (model) {
-                            var name = model.get("name"),
-                                value = model.get("id"),
-                                icon; // TODO: collection icons
-                            entries.push({name: name, value: value, icon: icon});
-                        });
-                    }
-                }
-                if(options.autoComplete.seed) {
-                    entries.concat(_.result(options.autoComplete,'seed'));
-                }
-                return entries;
-            };
-
-            if(options.type === 'model')  {
-                this.listenTo(fieldRegistry.collection, 'update', this.onFieldRegistryUpdate); //CODE:
-                this.listenTo(fieldRegistry.collection, 'change:name', this.onFieldRegistryUpdate);
-                this.listenTo(fieldRegistry.collection, 'change:id', this.onFieldRegistryUpdate);
-            }
-        } else {
-            var entryInput = function() {
-                if(options.autoComplete.seed) {
-                    var entries = _.result(options.autoComplete,'seed');
-                }
-                return entries;
-            }
-        }
-        this.autoComplete.addGroup(groupId, entryInput, onAutoComplete);
-    },
-    
-    onDataAutoComplete: function(event, $element, fieldRegistry) 
-    {
-        this.autoComplete.onAutocomplete(event, $element, fieldRegistry);
-        return this;
-    },
-    onFieldRegistryUpdate: function()
-    {
-        this.autoComplete.reseed();
-    }
-});
-
-rpgt.views.ModelFields = Backbone.View.extend({
-//model: the constructor for new models
-//activeModel: the model that is currenlty being editted.
-
-/**        models: { //form fill
-//        {group_id}: {
-//          readOnStart: true, // If the model has a id input and this is set to true, the other model inputs will have the input value of the model with the same id.
- //          manageMode: false, // 'model' to write data in into the active model. 'object' to write data into a data object. Leave false if not managing anything and just have it for input
-//          data: {} // when readMode 'object' is used, the _readHtml function will put data from html into this data object
-//          activeModel: {},  // model of where the current field values are based on.
-//          prefix: 'pre_',
-//          fields : [] // list of fields that get filled by the model
-//          $fields : {} // collection of jQuery objects representing the fields. @Example: { id: $idField, name: $nameField} 
-//          collection: {}, // collection with model available for autocomplete
-//        },
-//        } */
-    models: {}, // model options
-
-    RegistryConstructors: {
-        data: FieldRegistry,
-        model: ModelFieldRegistry,
-        default: ModelFieldRegistry,
-    },
-    modelsFields: [], // collection of model field registries
-
-    autoCompleteConstructor: AutoCompleteInterface,
-    autoComplete: {},
-
-    initModels: function() //set the modelFields field registries
-    {
-        _.each(this.models, function(modelOptions, modelId) {
-            var RegistryConstructor, fieldRegistry;
-            if(modelOptions.registryType && this.RegistryConstructors[modelOptions.registryType]) {
-                RegistryConstructor = this.RegistryConstructors.default[modelOptions.registryType];
-            } else {
-                RegistryConstructor = this.RegistryConstructors.default;
-            }
-            fieldRegistry = new RegistryConstructor(modelId, this.$el, modelOptions);
-            this.modelsFields.push( fieldRegistry );
-        }, this);
-        this.initAutoComplete();
-    },
-    renderModelFields: function()
-    {
-        // set jQuery fields in the _fields properties 
-        _.each(this.modelsFields, function(fieldRegistry) {
-            fieldRegistry.setFields();
-        });
-        this.writeModelsFromReadId();
-        
-        this.autoComplete.gatherInputs();
-    },
-    
-    // Read if the model id is in the form html and set it as active model. Needs an entry with they index 'id' in the 'fields' object.
-    writeModelsFromReadId: function()
-    {
-        _.each(this.modelsFields, function(modelFields) {
-            modelFields.readId();
-        });
-        return this;
-    },
-    /** set current field values to values of a given model or the currently active model */
-    writeModelFields: function(fieldsId, model)
-    {
-        if (fieldsId) {
-            this.modelsFields[fieldsId].write(model);
-        } else {
-            _.each(this.modelsFields, function(fieldRegistry) {
-                fieldRegistry.write();
-            });
-        }
-        return this;
-    },
-    setField: function(name, $field)
-    {
-        if($field) {
-            this.$fields[name] = $field;
-        } else {
-            this.$fields[name] = this.$('[name="'+name+'"]');
-        }
-        return this;
-    },
-    getModelFields: function(fieldId)
-    {
-        return _.find(this.modelsFields, function(fields) {
-            return fields.id === fieldId; 
-        });
-    },
-    getActiveModels: function()
-    {
-        var models = [];
-        _.each(this.modelsFields, function(modelFields){
-            models.push(modelFields.getModel());
-        });
-        return models;
-    },
-    getActiveModel: function(fieldsRegistryId)
-    {
-        var modelFields = this.getModelFields(fieldsRegistryId);
-        return modelFields ? modelFields.getModel() : false;
-    },
-    setActiveModel: function(fieldsRegistryId, model)
-    {
-        this.getModelFields(fieldsRegistryId).setModel(model);
-        this.trigger('update:' + fieldsRegistryId, null, null);
-        return this;
-    },
-    unsetModel: function(modelName)
-    {
-        this.modelsFields[modelName].unsetModel();
-        this.trigger(modelName + ':model:update', null, null);
-        return this;
-    },
-    revertChanges: function()
-    {
-        _.each(modelsFields, function(formModel){
-            formModel.write();
-        });
-        return this;
-    },
-    /**
-     * Updates the activeModel with the values entered in the form
-     * @returns {undefined}
-     */
-    readHtml: function()
-    {
-        _.each(this.modelsFields, function(fieldRegistry) {
-            fieldRegistry.read();
-        });
-        this.trigger('html:read');
-        return this;
-    },
-    
-    /* ----------------------------------------------------- *\
-     * Autocomplete methods
-     * ----------------------------------------------------- */
-    
-    onModelAutoComplete: function(event, modelId, modelFields)
-    {
-        modelFields.setModel(modelId);
-        modelFields.write();
-        event.target.value = modelFields.getModel().get('name');
-        return this;
-    },
-    
-    initAutoComplete: function()
-    {
-        this.autoComplete = new this.autoCompleteConstructor(this);
-        this.fillAutoComplete();
-        return this;
-    },
-    /** fill the autocomplete interface with autocomplete collection groups */
-    fillAutoComplete: function()
-    {
-        _.each(this.modelsFields, function(fieldRegistry){
-            var self = this;
-            var onAutoComplete = function (event, value) {
-                self.onModelAutoComplete(event, value, fieldRegistry);
-            },
-            entryInput = function() {
-                var entries = [];
-                fieldRegistry.collection.each(function (model) {
-                    var name = model.get("name"),
-                        value = model.get("id"),
-                        icon; // TODO: collection icons
-                    entries.push({name: name, value: value, icon: icon});
-                });
-                return entries;;
-            };
-            
-            this.autoComplete.addGroup(fieldRegistry.id, entryInput, onAutoComplete);
-            this.listenTo(fieldRegistry.collection, 'update', this.onFieldRegistryUpdate); //CODE:
-            this.listenTo(fieldRegistry.collection, 'change:name', this.onFieldRegistryUpdate);
-            this.listenTo(fieldRegistry.collection, 'change:id', this.onFieldRegistryUpdate);
-        }, this);
-        this.autoComplete.reseed();
-        return this;
-    },
-    
-    onAutoComplete: function(event, $element) {
-        this.autoComplete.onAutocomplete(event, $element);
-        return this;
-    },
-    remove: function() {
-        this.autoComplete.destroyInputs();
-        this._removeElement();
-        this.stopListening();
-        return this;
-    },
-    
-    onFieldRegistryUpdate: function()
-    {
-        this.autoComplete.reseed();
-    }
-//        changeWysiwyg: function() {}
 });
 
 // A Form View that administers one or more models. Can update, create and delete models it administers.
-rpgt.views.DataFields.isAdminForm = function ()
+rpgt.views.DataForm.isAdminForm = function ()
 {
     var _initialize = this.prototype.initialize,
         _render = this.prototype.render,
         Messenger = window.Messenger;
     
-    if(!this.prototype.events) {
-        this.prototype.events = {};
-    }
+    this.prototype.events = this.prototype.events || {};
     _.defaults(this.prototype.events, {
         'autocomplete [data-auto_entries]' : 'onAutoComplete',
         'click [data-auto_entries]' : 'onShowAll',
         'submit .admin-form': 'onSubmit',
-        'click .cancle' : 'revertChanges',
+        'click .cancle' : 'onCancle',
         'click [data-delete_model]' : 'deleteModels'
     });
     
-    _.defaults(this.prototype, {
+    this.prototype = _.extend({
 //        models: {
 //          manageMode: 'admin' // if manageMode a model is set to true, changes to the model are effecting the database model
 //        }
         initNewAutoCompleteGroup: function()
         {
-            var self = this,
+            var self = this, options = {},
             onAutoComplete = function(event, value) {
-                _.each(self.modelFields, function(fields) {
-                    if(fields.mangeMode === 'admin') {
-                        fields.unsetModel();
+                _.each(self.fieldGroups, function(group, groupName) {
+                    if(group.manageMode === 'admin') {
+                        self.setPad({});
                     }
                 });
                 event.target.value = value;
             },
-            entryInput = function() { 
+            entryInput = function() {
                 return [{
                     html: ["<span>", "</span>"],
                     name: "New",
                     string: "%% New %%"
                 }];
             };
-            
-            this.autoComplete.addGroup('new', entryInput, onAutoComplete);
+                        
+            this.DataFields.addAutoCompleteGroup('new', entryInput, onAutoComplete);
         },
         
         /**
@@ -1548,7 +990,7 @@ rpgt.views.DataFields.isAdminForm = function ()
                 
             },this);
             
-            this.activeModel = new this.model();
+            this.setPad( new this.model());
         },
         
         /**
@@ -1557,24 +999,25 @@ rpgt.views.DataFields.isAdminForm = function ()
          */
         saveModels: function()
         {
-            _.each(this.models, function(modelOptions, fieldsId) {
-                if(modelOptions.mangeMode === 'admin') {
+            _.each(this.fieldGroups, function(groupOptions, groupId) {
+                if(groupOptions.manageMode === 'admin') {
                     var jqXHR, created, self = this,
-                        modelFields = self.getModelFields(fieldsId),
-                        activeModel = modelFields.getModel();
-                    created = activeModel.isNew();
-                    jqXHR = activeModel.save();
+                        modelField = self.DataFields.getField(),
+                        model = modelField.getPad(groupId),
+                        collection = modelField.collection;
+                    created = model.isNew();
+                    jqXHR = model.save();
                     jqXHR.done(function(data) {
                         if(created) {
-                            var newModel = modelFields.collection.add(data);
-                            modelFields.setModel(newModel);
-                            Messenger().success(fieldsId + ' created');
+                            var newModel = collection.add(data);
+                            modelField.setPad(newModel);
+                            Messenger().success(groupId + ' created');
                         } else {
-                            Messenger().success(fieldsId + ' saved');
+                            Messenger().success(groupId + ' saved');
                         }
                     });
                     jqXHR.fail(function() {
-                        Messenger().error('An error happened saving ' + fieldsId);
+                        Messenger().error('An error happened saving ' + groupId);
                     });
                 }
             });
@@ -1585,9 +1028,9 @@ rpgt.views.DataFields.isAdminForm = function ()
         {
             var jqXHR;
             
-            _.each(this.models, function(modelOptions, fieldsId) {
-                if(modelOptions.mangeMode === 'admin') {
-                    var activeModel = this.getModelFields(fieldsId).getModel();
+            _.each(this.fieldGroups, function(groupOptions, fieldsId) {
+                if(groupOptions.manageMode === 'admin') {
+                    var activeModel = this.DateFields.getPad(fieldsId);
                     jqXHR = activeModel.destroy();
                     jqXHR.done(function() {
                         Messenger().success( fieldsId + ' model deleted');
@@ -1604,6 +1047,11 @@ rpgt.views.DataFields.isAdminForm = function ()
         
         /* events */
 
+        onCancle: function()
+        {
+            this.DataFields.revertChanges();
+        },
+
         onSubmit: function(event)
         {
             event.preventDefault();
@@ -1617,18 +1065,25 @@ rpgt.views.DataFields.isAdminForm = function ()
         onShowAll: function(e)
         {
             e.preventDefault();
-            this.autoComplete.showAll($(e.target));
+            this.DataFields.AutoComplete.showAll($(e.target));
+        },
+        
+        onAutoComplete: function(event, $element, fieldRegistry)
+        {
+            this.DataFields.onAutoComplete(event, $element, fieldRegistry);
+            return this;
         },
         
 
-    });
+    }, this.prototype);
     _.extend(this.prototype, {
 		
         initialize: function ()
         {
             _initialize.apply(this, arguments);
-            this.initModels();
+            this.initDataForm();
             this.initNewAutoCompleteGroup();
+            
             if(!this.collection) { throw Error('The view needs a collection'); }
             
             return this;
@@ -1644,7 +1099,7 @@ rpgt.views.DataFields.isAdminForm = function ()
                 }
             });
             
-            this.renderModelFields();
+            this.renderDataForm();
             return this;
         },
     });
@@ -1658,82 +1113,88 @@ rpgt.views.DataFields.isAdminForm = function ()
  */
 rpgt.views.RelationContainer = Backbone.View.extend({
 
-    thisModel: null, // the name of the selected model in the `models` property
-    _thisModel: null, // the model object
-    foreignModel: null, // the name of the foreign model in the `models` property.
+    thisGroup: null, // name of the selected group in the `fieldGroups` property
+    _thisPad: null, // the pad object
+    foreignGroup: null, // name of the foreign group in the `fieldGroups` property.
     foreignKey: '', // The key of where foreign data can be gotten or a function that gets the key
-    foreignData: [], 
+    foreignPads: [], 
+    foreignViews: [],
     relationForm: null, // Form view constructor
 
 
     nonSetRelations: null,
     getForeignKey: function() { return _.result(this, 'foreignKey'); },
-    getThisModel: function() { return this._thisModel; },
-    getForeignData: function() { 
-        return this.getThisModel().get(this.getForeignKey()); 
+    getThisPad: function() { return this._thisPad; },
+    getForeignObject: function() { 
+        var pad = this.getThisPad(), object; 
+        if(padIsModel(pad)) {
+            object = pad.get(this.getForeignKey());
+        } else {
+            object = pad[this.getForeignKey()];
+        }
+        return object;
     },
-    setThisModel: function(model)
+    setThisPad: function(pad)
     {
-        this._thisModel = model;
-        this.foreignData = this.getForeignData();
+        this._thisPad = pad;
+        this.foreignPads = this.getForeignObject();
         this.setRelationForms();
     },
     setRelationForms: function()
     {
         this.removeAllForms();
-        _.each(this.foreignData, function(data) {
-            this.addRelationForm(data);
-        }, this);
+        for (var i = 0; i < this.foreignPads; i++) {
+                window.console.log('adding relation form');
+            this.addRelationForm(this.foreignPads[i]);
+        }
     },
-    addRelationForm: function(data)
+    addRelationForm: function(pad)
     {
-        var relationForm, modelOptions;
+        var relationForm, groupOptions;
 
-        if(!_.isUndefined(data) && !_.isUndefined(data.id)) {
-            this.nonSetRelations.remove(data.id);
-        } else {
-            window.console.log('check if filled relationdata w/o id is a thing'); //as this object doesn't create new objects
-            window.console.log(data);
-            data = {};
+        if(this.foreignCollection && !_.isUndefined(pad) && !_.isUndefined(pad.id)) {
+            this.nonSetRelations.remove(pad.id);
+        }
+        if(!pad) {
+            pad = {};
+            this.foreignPads.push(pad);
         }
 
-        modelOptions = {};
-        modelOptions[this.thisModel] = { // current model
-                    manageMode: false,
-                    activeModel: this.getThisModel(),
+        groupOptions = {};
+        groupOptions[this.thisGroup] = { // current model
+                    pad: this.getThisPad(),
                 };
-        modelOptions[this.foreignModel] = {
-                    manageMode: 'object',
-                    modelData: data
+        groupOptions[this.foreignGroup] = {
+                    pad: pad,
                 };
+        if(pad.pivot) {
+            groupOptions.pivot = {
+                    pad: pad.pivot,
+                };
+        }
 
         relationForm = new this.relationForm({
-            models: modelOptions,
-            el: '<form></form>', 
-//                model: this.activeModel,
-//                modelName: this.modelName,
-//                modelNamePlural: this.modelNamePlural,
-//                relationTemplate: this.relationTemplate,
-//                modelAutocomplete: this.modelAutocomplete,
-//                parent: this,
-//                collection: this.foreignCollection,
-//                nonSetRelations: this.nonSetRelations,
-//                relationData: relationData
+            fieldGroups: groupOptions,
+            el: '<form></form>'
         });
         relationForm.render();
 
-        relationForm.on('model:'+ this.modelNamePlural +':update', this.changeFormRelation, this);
-        this.foreignData.push(relationForm);
+        
+        relationForm.on('remove', this.removeRelationForm, this);
+        relationForm.on('pad:'+ this.thisGroup +':update', this.changeFormRelation, this);
+        this.foreignViews.push(relationForm);
 
         this.$container.append(relationForm.$el);
     },
     removeAllForms: function()
     {
-        this.nonSetRelations.reset(this.foreignCollection.models);
-        _.each(this.foreignData, function(view) {
+        if(this.foreignCollection) {
+            this.nonSetRelations.reset(this.foreignCollection.models);
+        }
+        _.each(this.foreignViews, function(view) {
             view.remove();
         });
-        this.foreignData = [];
+        this.foreignPads = [];
     },
     removeRelationForm: function(relationForm)
     {
@@ -1743,36 +1204,30 @@ rpgt.views.RelationContainer = Backbone.View.extend({
             this.nonSetRelations.add(this.foreignCollection.get(relationForm.relationData.id));
             this.updateRelationsACCollection();
         }
-        this.foreignData = _.filter(this.foreignData, function(relation){
-            if(cid !== relation.cid) {
-                return true;
-            } else {
-                relation.remove();
-                return false;
-            }
-        });
+        for (var i = 0; i < this.foreignViews; i++) {
+            if(cid !== foreignViews[i].cid) {
+                delete foreignViews[i];
+                break;
+            }   
+        }
     },
-    // get an array of models with relations that have been set
+    // get an array of pads with relations that have been set
     getExistingRelations: function()
     {
-        var models = [];
-        _.each(this.foreignData, function(view) {
-            models.push(view.model);
-        });
-        return models;
+        return this.foreignPads;
     },
     // do updates when a child relation form's model updates
     changeFormRelation: function(newModel, previousModel)
     {
         this.nonSetRelations.remove(newModel.get('id'));
-        if(!_.isUndefined(previousModel)) {
+        if(this.nonSetRelations && !_.isUndefined(previousModel)) {
             this.nonSetRelations.add(previousModel);
         }
         return this;
     },
     readHtml: function()
     {
-        _.each(this.foreignData, function(relationView) {
+        _.each(this.foreignPads, function(relationView)   {
             relationView.readHtml();
         });
     }
@@ -1787,17 +1242,22 @@ rpgt.views.RelationContainer.containsRelations = function() // TODO: rename
         /**
          * @param {type} options
          *      foreignCollection: The collection of what the foreign model can be chosen out of.
-         *      activeModel: The currently active model.
+         *      pad: The currently active pad.
          * @returns {undefined}
          */
         initialize: function (options) 
         {
-            this.foreignCollection = options.foreignCollection;
-            this.nonSetRelations = this.foreignCollection.clone(); // relations that aren't already set, and thus available.
+            _.extend(this,_.pick('foreignCollection'));
+            if(this.foreignCollection) {
+                this.nonSetRelations = this.foreignCollection.clone(); // relations that aren't already set, and thus available.
+            }
             this.relationViews = [];
             
             _initialize.apply(this, arguments);
-            this.setThisModel(options.activeModel);
+            if(options.pad) this.setThisPad(options.pad);
+                window.console.log('thisPad:');
+                window.console.log(options.pad);
+                
             if(!_.isFunction(this.relationForm)) { throw Error('constructor for relationform hasn\'t been set');};
         },
         render: function()
@@ -1807,7 +1267,7 @@ rpgt.views.RelationContainer.containsRelations = function() // TODO: rename
     });
     return this;
 };
-rpgt.views.RelationInputs = rpgt.views.ModelFields.extend({
+rpgt.views.RelationInputs = rpgt.views.DataForm.extend({
     autoCompleters: {},
     autoCompleteCollections: {},
     autoCompleteHandlers: {},
@@ -1817,7 +1277,8 @@ rpgt.views.RelationInputs = rpgt.views.ModelFields.extend({
     },
     deleteRelation: function()
     {
-        this.parentView.removeRelationForm(this);
+        this.trigger('remove',this);
+        this.remove();
     },
     // Code that updates this.relationdata. Needs to be defined by the specific view.
     readHtml: function()
@@ -1838,30 +1299,10 @@ rpgt.views.RelationInputs = rpgt.views.ModelFields.extend({
             this.relationData.pivot[this.modelName + '_id'] = this.model.get('id');
         }
     },
-    _setupAutoComplete: function()
-    {
-        this._insertDefaultAutocompleters();
-        this._setupAutoCompleteHandlers();
-        this.initAutocomplete();
-        this.listenTo(this.collection, 'update', this.onCollectionUpdate);
-        this.listenTo(this.collection, 'change:name', this.onCollectionUpdate);
-    },
     onCollectionUpdate: function()
     {
         this.setAutoCompleteCollections();
         this.initAutoCompleteInputs();
-    },
-    _setupAutoCompleteHandlers: function()
-    {
-        var self = this;
-        if(this.modelAutocomplete) {
-            this.autoCompleteHandlers[this.modelNamePlural] = function (event, value) {
-                var modelResult;
-                modelResult = self.collection.get(value);
-                self.setModel(modelResult);
-                event.target.value = self.activeModel.get('name');
-            };
-        }
     },
 });
 rpgt.views.RelationInputs.representsRelation = function ()
@@ -1870,22 +1311,12 @@ rpgt.views.RelationInputs.representsRelation = function ()
         _render = this.prototype.render;
     _.extend(this.prototype, {
             // EXPAND: options.
-            initialize: function (initArgs) 
+            initialize: function (options)
             {
-                this.setParentView(initArgs.parent);
-                this.model = initArgs.model;
-                this.modelName = initArgs.modelName;
-                this.modelNamePlural = initArgs.modelNamePlural;
-                this.relationTemplate = initArgs.relationTemplate;
-                this.modelAutocomplete = initArgs.modelAutocomplete; //can be undefined
-                this.collection = initArgs.collection;
-                this.nonSetRelations = initArgs.nonSetRelations;
-                this.relationData = initArgs.relationData;
-
-                if(!_.isEmpty(this.relationData)) {
-                    this.activeModel = this.collection.get(this.relationData.id);
-                }
-
+                _.extend(this,_.pick(options,['nonSetRelations']));
+               
+                _.extend(this.fieldGroups, options.fieldGroups);
+               
                 this.on('model:update', this.updateRelationDataFromModel, this);
                 this.on('html:read', this.readHtml, this);
                 _initialize.apply(this, arguments);
@@ -1893,18 +1324,9 @@ rpgt.views.RelationInputs.representsRelation = function ()
             },
             render: function()
             {
-                var self = this;
                 _render.apply(this, arguments);
 
-                this.$('.wysiwyg').summernote({
-                    height: 250,
-                    callbacks: {
-                        onChange: self.changeWysiwyg
-                    }
-                });
-
-                this.setFields();
-                this._setupAutoComplete();
+                this.DataFields.gather();
                 return this;
             }
     });
@@ -1944,21 +1366,22 @@ rpgt.views.AdminView = Backbone.View.extend({
 
  });
 
-rpgt.views.NarrativeView = rpgt.views.ModelFields.extend({
+rpgt.views.NarrativeView = rpgt.views.DataForm.extend({
 
-    models: {
+    fieldGroups: {
         narrative: {
             manageMode: 'admin',
             fields: ['id','name','description','description_short','oddity','type'],
-//            collection: 
+//            collection: set in initialize
         }
     },
+    primaryGroup: 'narrative',
     
     namespace: 'narrativeview',
     model: rpgt.models.Narrative,
     
     initialize: function() {
-        this.models.narrative.collection = this.collection;
+        this.fieldGroups.narrative.collection = this.collection;
     },
     render: function()
     {
@@ -1976,17 +1399,17 @@ rpgt.views.NarrativeView = rpgt.views.ModelFields.extend({
 
         this.readHtml();
         window.console.log('final active models going to server');
-        window.console.log(this.getActiveModel('narrative'));
+        window.console.log(this.getPad('narrative'));
 //        this.saveModels();
 
         return this;
-    }
+    },
     
     /** Related model. To be decoupled. **/
     
 }).isAdminForm();
 
-rpgt.views.RacesView = rpgt.views.ModelFields.extend({
+rpgt.views.RacesView = rpgt.views.DataForm.extend({
     
     modelName: 'race',
     modelNamePlural: 'races',
@@ -2009,7 +1432,7 @@ rpgt.views.RacesView = rpgt.views.ModelFields.extend({
     
 }).isAdminForm();
 
-rpgt.views.ClassesView = rpgt.views.ModelFields.extend({
+rpgt.views.ClassesView = rpgt.views.DataForm.extend({
     
     modelName: 'class',
     modelNamePlural: 'classes',
@@ -2073,12 +1496,15 @@ rpgt.views.NarrativeRelations = rpgt.views.RelationContainer.extend({
 
 rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
     
-    models: {
+    fieldGroups: {
         narrative: {
             fields: ['id'],
         },
         foreign: {
             fields: ['id','name'],
+        },
+        pivot: {
+            fields: ['oddity'],
         }
     },
     
@@ -2098,9 +1524,7 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
     parent: {},
     initialize: function(options)
     {
-        this.modelName = options.modelName; // name of the relation model
-        this.modelNamePlural = options.modelNamePlural;
-        this.relationTemplate = options.relationTemplate;
+        _.extend(this,_.pick(options,['modelName','modelNamePlural','relationTemplate']));
         this.template = _.template($(this.relationTemplate).html());
         return this;
     },
@@ -2108,7 +1532,7 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
     {
         var relationData;
         // TODO: write in missing data with default data.
-        _.extend(this.relationData, this.defaultData);
+        _.defaults(this.relationData, this.defaultData);
         this.$el.html(this.template(this.relationData));
         return this.$el;
     },
@@ -2419,7 +1843,17 @@ rpgt.views.FeatureablesContainer = Backbone.View.extend({
 rpgt.views.Featureable = Backbone.View.extend({ // TODO: throw error if instantiated directly
     type: '',
     data: '', // data tied to parent object
-    fields: [],
+    fieldGroups: {
+        narrative: {
+            fields: ['id'],
+        },
+        foreign: {
+            fields: ['id','name', 'description'],
+        },
+        pivot: {
+            fields: ['level']
+        }
+    },
     defaultData: {},
     initialize: function(args)
     {
