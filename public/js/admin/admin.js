@@ -544,6 +544,7 @@ var FieldRegistry = Backbone.Model.extend({
             var fieldDefault = $field.attr('data-default') || '';
             value || (value = fieldDefault);
         }
+            window.console.log('writing field: ' + field + ' : ' + value);
 
         if($field.hasClass('wysiwyg')) {
             $field.summernote('code',value);
@@ -830,6 +831,7 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
             var id = this.getFields(groupName).fieldVal('id');
             if(id) {
                 this.setPad(groupName,id);
+                window.console.log('read ID pad set');
             }
         }, this);
     },
@@ -942,7 +944,7 @@ rpgt.views.DataForm = Backbone.View.extend({
     
     remove: function() 
     {
-        this.autoComplete.destroyInputs();
+        this.DataFields.AutoComplete.destroyInputs();
         this._removeElement();
         this.stopListening();
         return this;
@@ -1166,7 +1168,7 @@ rpgt.views.RelationContainer = Backbone.View.extend({
     setRelationForms: function(pads)
     {
         this.removeAllForms();
-            window.console.log('setting relation forms');
+            window.console.log('setting ' + this.foreignGroup + ' relation forms');
             window.console.log(pads);
         for (var i = 0; i < pads.length; i++) {
                 window.console.log('adding relation form');
@@ -1186,7 +1188,7 @@ rpgt.views.RelationContainer = Backbone.View.extend({
         this.foreignPads.push(pad);
 
         groupOptions = {};
-        groupOptions[this.thisGroup] = { // current model
+        groupOptions[this.thisGroup] =  { // current model
                     pad: this.getThisPad(),
                 };
         groupOptions[this.foreignGroup] = {
@@ -1343,15 +1345,18 @@ rpgt.views.RelationInputs.representsRelation = function ()
                
                 _.extend(this.fieldGroups, options.fieldGroups);
                
-                this.on('model:update', this.updateRelationDataFromModel, this);
-                this.on('html:read', this.readHtml, this);
+                this.on('swap', this.updateRelationDataFromModel, this);
+                this.on('read', this.readHtml, this);
+                window.console.log('init relationInputs');
                 _initialize.apply(this, arguments);
+                this.initDataForm();
                 return this;
             },
             render: function()
             {
                 _render.apply(this, arguments);
-
+                this.renderDataForm();
+                
                 this.DataFields.gather();
                 return this;
             }
@@ -1505,7 +1510,10 @@ rpgt.views.NarrativeRelations = rpgt.views.RelationContainer.extend({
     },
     getRelationForm: function()
     {
-        return rpgt.views.NarrativeRelation;
+        return rpgt.views.NarrativeRelation.extend({ 
+            thisGroup: this.thisGroup,
+            foreignGroup: this.foreignGroup
+        });
     },
     
     //-----------------------------------------------------
@@ -1549,11 +1557,12 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
     },
     parent: {},
     initialize: function(options)
-    {
-        _.extend(this,_.pick(options,['modelName','modelNamePlural','relationTemplate']));
-            window.console.log('checking relationTemplate');
-            window.console.log(options);
-            window.console.log(this.relationTemplate);
+    {   
+        window.console.log('checking relationTemplate');
+        window.console.log(options);
+        if(!this.relationTemplate) {
+            this.relationTemplate = '#' + this.thisGroup + this.foreignGroup + '_template';
+        }
         this.template = _.template($(this.relationTemplate).html());
         return this;
     },
@@ -1561,7 +1570,8 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
     {
         var relationData;
         // TODO: write in missing data with default data.
-        _.defaults(this.relationData, this.defaultData);
+        this.relationData = _.extend({}, this.relationData, this.defaultData);
+            window.console.log(this.relationData);
         this.$el.html(this.template(this.relationData));
         return this.$el;
     },
@@ -1611,7 +1621,7 @@ rpgt.views.NarrativeFeaturesRelations = rpgt.views.NarrativeRelations.extend({
 });
 rpgt.views.NarrativeFeatureRelation = rpgt.views.NarrativeRelation.extend({
     
-    relationTemplate: '#narrativefeature_template',
+    relationTemplate: '#narrativefeatures_template',
     hasFeatureable: false,
     fields: ['id','name','description'],
     events: {
@@ -1655,9 +1665,7 @@ rpgt.views.NarrativeFeatureRelation = rpgt.views.NarrativeRelation.extend({
     
     initialize: function(options)
     {
-        this.modelName = options.modelName;
-        this.modelNamePlural = options.modelNamePlural;
-        this.relationTemplate = options.relationTemplate;
+            window.console.log(this.relationTemplate);
         this.template = _.template($(this.relationTemplate).html());
         return this;
     },
