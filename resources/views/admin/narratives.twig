@@ -45,12 +45,12 @@
                     pad: pad,
                 });
                 rpgt.NarrativeRaceRelations.render();  
-                {#rpgt.NarrativeFeatureRelations = new rpgt.views.NarrativeFeatureRelations({
+                rpgt.NarrativeFeatureRelations = new rpgt.views.NarrativeFeatureRelations({
                     el: $('#narrativefeatures'),
                     foreignCollection: rpgt.Features,
                     pad: pad,
-                });#}
-{#                rpgt.NarrativeFeatureRelations.render();  #}
+                });
+                rpgt.NarrativeFeatureRelations.render();  
                 
                 relationContainers = [rpgt.NarrativeClassRelations, rpgt.NarrativeRaceRelations, 
 {#                    rpgt.NarrativeFeatureRelations#}
@@ -58,20 +58,21 @@
                 
                 //bind events
                 rpgt.NarrativeView.on('fields:swap:narrative', function(newPad) {
-                    window.console.log('narrative changed');
                     _.each(relationContainers, function(container) {
                         container.setThisPad(newPad);
-                        container.render();
                     });
                 });
-                rpgt.NarrativeView.on('fields:read', function() {
+                rpgt.NarrativeView.on('fields:read:narrative', function() {
+                    var model = rpgt.NarrativeView.getPad();
                     _.each(relationContainers, function(container) {
                         container.readHtml();
+                        var pads = container.getForeignPads();
+                        model.set(container.getForeignKey(), pads);
                     });
                 });
-                rpgt.NarrativeView.on('render', function() {
+                rpgt.NarrativeView.on('fields:write:narrative', function() {
                     _.each(relationContainers, function(container) {
-                        container.render();
+                        container.writeHtml();
                     });
                 });
                 
@@ -237,7 +238,7 @@
             </div>
         </fieldset>
     </script>
-    <script id="proficiencyfeatureables_template" type="text/template" >
+    <script id="proficiencyfeatureable_template" type="text/template" >
         
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name">Proficiency</label>

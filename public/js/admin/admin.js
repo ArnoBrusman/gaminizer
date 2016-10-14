@@ -394,6 +394,7 @@ var FieldRegistry = Backbone.Model.extend({
      * Kinda over-engineered at the moment. Maybe to be used for 
      */
     _eachField: function(itterator, data, fields, namespace) {
+        _.bind(itterator, this);
         if(!fields) fields = this.fields;
         if(!data) data = this.getPadData();
         var isObject = !_.isArray(fields);
@@ -422,14 +423,14 @@ var FieldRegistry = Backbone.Model.extend({
     /** read html, put read values on the pad and return it */
     read: function(fieldName)
     {
-        var fieldVal;
-
+        var newFieldVal, self = this;
         if(fieldName) {
-            fieldVal = this.fieldVal(fieldName);
-            this._setPadValue(fieldName, fieldVal);
+            newFieldVal = this.newFieldVal(fieldName);
+            this._setPadValue(fieldName, newFieldVal);
         } else {
             this._eachField(function(fieldName, fieldVal, data) {
-                this._setPadValue(fieldName, fieldVal);
+                newFieldVal = self.fieldVal(fieldName);
+                self._setPadValue(fieldName, newFieldVal);
             });
         }
         this.trigger('read');
@@ -442,7 +443,7 @@ var FieldRegistry = Backbone.Model.extend({
     {
         if(seed) {
             this.seed = seed;
-        }
+        } 
         this.write(this.seed);
     },
     
@@ -798,10 +799,16 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     },
     setPad: function(groupId, pad)
     {
-        var groupOptions = this.groups[groupId];
-        if (_.isString(pad) && groupOptions.collection) {
-            pad = groupOptions.collection.get(pad);
+        var groupOptions = this.groups[groupId],
+                useCollection = _.isString(pad) && groupOptions.collection, 
+                padIsModel = groupOptions.padType === 'model',
+                model;
+        
+        if (useCollection) {
+            model = groupOptions.collection.get(pad);
+            pad = padIsModel ? model : _.clone(model.attributes);
         }
+        
         this.getFields(groupId).setPad(pad);
 //        TODO: CODE:
 //            this.stopListening(previousPad);
@@ -811,6 +818,21 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
 //            }
 //            
         return this;
+    },
+    getNewPad: function(groupId, attributes)
+    {
+        var groupOptions = this.groups[groupId],
+                padIsModel = groupOptions.padType === 'model',
+                useCollection = !groupOptions.model,
+                pad;
+        
+        if(padIsModel) {
+            pad = useCollection ? new groupOptions.collection.model(attributes) : new groupOptions.model(attributes);
+        } else {
+            pad = {};
+        }
+        
+        return pad;
     },
     
     /* ----------------------------------------------------- *\
@@ -840,9 +862,11 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
             newRegistry = new this.RegistryModel({id:groupId}, groupOptions);
  
         // bind forwarded events
+        this.stopListening(newRegistry, "all");
         this.listenTo(newRegistry, "all", function(event) {
             var eventArgs = arguments,
-                eventSpace = event.replace(/^(.*?)(:.*)?$/, '$1:'+ groupId +'$2');
+                eventSpace = event.replace(/^(.*?)(:.*)?$/, '$1:'+ groupId +'$2'),
+                eventGlobal = event.replace(/^(.*?)(:.*)?$/, '$1');
             eventArgs[0] = eventSpace;
             self.trigger.apply(self, eventArgs);
         });
@@ -919,6 +943,7 @@ rpgt.views.DataForm = Backbone.View.extend({
             fields : [] // list of fields that get managed by the group
             
             pad: {},  // As in 'notepad'. Object, or model that gets filled in by the fields.
+            padType: 'object' // if set to 'model', newly created pads will be model created from the set model constructor
             
             // options for when padtype is model
             collection: {}, // collection with models available for autocomplete
@@ -947,10 +972,10 @@ rpgt.views.DataForm = Backbone.View.extend({
             autoCompleteGroups: this.autoCompleteGroups
         });
         
-        //forwarding events
+        // bind forwarded events
+        this.stopListening(this.DataFields, 'all');
         this.listenTo(this.DataFields, 'all', function(event) {
             var eventArgs = arguments;
-//                window.console.log(typeof arguments);
             eventArgs[0] = 'fields:' + event;
             self.trigger.apply(self, eventArgs);
         });
@@ -986,7 +1011,8 @@ rpgt.views.DataForm = Backbone.View.extend({
             pad = groupId;
             groupId = _.result(this,'primaryGroup');
         }
-        return this.getFields(groupId).setPad(pad);
+        this.getFields(groupId).setPad(pad);
+        return this;
     },
     
     remove: function()
@@ -1033,7 +1059,6 @@ rpgt.views.DataForm.isAdminForm = function ()
             
             _.each(self.fieldGroups, function(group, groupId) {
                 if(group.manageMode === 'admin') {
-//                        window.console.log(groupId);
                     newSeeds.push({
                         name: "New",
                         value: groupId
@@ -1045,10 +1070,9 @@ rpgt.views.DataForm.isAdminForm = function ()
             this.autoCompleteGroups.new = {
                 seed: newSeeds,
                 onAutoComplete: function(event, value) {
-                    window.console.log('autoComplete: new');
-                    self.DataFields.wipeFields(value)
+                    var newPad = self.DataFields.getNewPad(value);
+                    self.DataFields.wipeFields(value).setPad(value,newPad).writeHtml();
                     event.target.value = 'New';
-//                    window.console.log();
                 }
             };
             return this;
@@ -1155,6 +1179,7 @@ rpgt.views.DataForm.isAdminForm = function ()
             
             this.renderDataForm();
             
+            this.trigger('render');
             return this;
         },
     });
@@ -1169,20 +1194,16 @@ rpgt.views.DataForm.isAdminForm = function ()
  */
 rpgt.views.RelationContainer = Backbone.View.extend({
 
-    thisGroup: null, // name of the selected group in the `fieldGroups` property
     _thisPad: null, // the pad object
-    foreignGroup: null, // name of the foreign group in the `fieldGroups` property.
     foreignKey: '', // The key of where foreign data can be gotten or a function that gets the key
     foreignViews: [],
     relationForm: null, // Form view constructor
 
 
     nonSetRelations: null,
-    getForeignKey: function() { 
+    getForeignKey: function() {
         var foreignKey = _.result(this, 'foreignKey'); 
-        if(!foreignKey) {
-            foreignKey = this.foreignGroup;
-        }
+        
         return foreignKey;
     },
     getThisPad: function() { return this._thisPad; },
@@ -1192,7 +1213,7 @@ rpgt.views.RelationContainer = Backbone.View.extend({
     getForeignPads: function() {
         var foreignPads = [];
         for (var i = 0; i < this.foreignViews.length; i++) {
-            foreignPads.push(this.foreignViews[i].getPad(this.foreignGroup));
+            foreignPads.push(this.foreignViews[i].getPad('foreign'));
         }
         return foreignPads;
     },
@@ -1200,13 +1221,13 @@ rpgt.views.RelationContainer = Backbone.View.extend({
      * get the foreign pads from the thisPad object.
      */
     extractForeignPads: function() { 
-        var pad = this.getThisPad(), object; 
+        var pad = this.getThisPad(), array; 
         if(padIsModel(pad)) {
-            object = pad.get(this.getForeignKey());
+            array = pad.get(this.getForeignKey());
         } else {
-            object = pad[this.getForeignKey()];
+            array = pad[this.getForeignKey()];
         }
-        return object;
+        return array;
     },
     setThisPad: function(pad)
     {
@@ -1216,7 +1237,6 @@ rpgt.views.RelationContainer = Backbone.View.extend({
     },
     resetRelations: function(pads)
     {
-        this.foreignViews = [];
         this.removeRelations();
         if(pads) {
             for (var i = 0; i < pads.length; i++) {
@@ -1257,11 +1277,11 @@ rpgt.views.RelationContainer = Backbone.View.extend({
         this.listenTo(relationForm, 'remove', function(){
             this.removeRelationForm(relationForm);
         });
-        this.listenTo(relationForm, 'fields:swap:'+ this.foreignGroup, function(newPad, oldPad){
-            this.changeFormRelation(relationForm);
+        this.listenTo(relationForm, 'fields:swap:foreign', function(newPad, oldPad){
+            this.changeForeignCollection(newPad, oldPad);
         });
-//        relationForm.on('pad:'+ this.thisGroup +':update', this.changeFormRelation, this);
         this.foreignViews.push(relationForm);
+        return relationForm;
     },
     removeRelation: function(relationForm)
     {
@@ -1291,9 +1311,10 @@ rpgt.views.RelationContainer = Backbone.View.extend({
         _.each(this.foreignViews, function(view) {
             view.remove();
         });
+        this.foreignViews.length = 0; // empty array without losing reverences
     },
     // do updates when a child relation form's model updates
-    changeFormRelation: function(newPad, previousPad)
+    changeForeignCollection: function(newPad, previousPad)
     {
         var padId;
         if(this.nonSetRelations) {
@@ -1311,7 +1332,16 @@ rpgt.views.RelationContainer = Backbone.View.extend({
         _.each(this.foreignViews, function(relationView)   {
             relationView.readHtml();
         });
-    }
+    },
+    writeHtml: function()
+    {
+        var $container = this.$(this.container);
+        $container.html('');
+        for (var i = 0; i < this.foreignViews.length; i++) {
+            $container.append(this.foreignViews[i].$el);
+            this.foreignViews[i].render();
+        }
+    },
     
 });
 rpgt.views.RelationContainer.containsRelations = function() // TODO: rename
@@ -1332,6 +1362,7 @@ rpgt.views.RelationContainer.containsRelations = function() // TODO: rename
             if(this.foreignCollection) {
                 this.nonSetRelations = this.foreignCollection.clone(); // relations that aren't already set, and thus available.
             }
+            
             this.foreignViews = [];
             
             options.container ? (this.container = options.container) : this.container || (this.container = '.relation-container');
@@ -1347,17 +1378,7 @@ rpgt.views.RelationContainer.containsRelations = function() // TODO: rename
             // TODO: debug: the foreignViews has an object reference somewhere that should be a seperate object
             _render.apply(this, arguments);
             
-            this.renderContainer();
-        },
-        renderContainer: function()
-        {
-            var $container = this.$(this.container);
-            $container.html('');
-            
-            for (var i = 0; i < this.foreignViews.length; i++) {
-                this.foreignViews[i].render();
-                $container.append(this.foreignViews[i].$el);
-            }
+            this.writeHtml();
         },
     });
     return this;
@@ -1370,11 +1391,6 @@ rpgt.views.RelationInputs = rpgt.views.DataForm.extend({
         this.remove();
     },
     
-    readHtml: function()
-    {
-        throw Error('method readHtml needs to be overwritten');
-        return this;
-    },
     onCollectionUpdate: function()
     {
         this.setAutoCompleteCollections();
@@ -1438,33 +1454,6 @@ rpgt.views.RelationInputs.representsRelation = function ()
 //define view
 rpgt.views.AdminView = Backbone.View.extend({
     
-    events: {
-        'autocomplete [data-auto_entries]' : 'autoCompleteHandler'
-    },
-    
-    pc: {},
-    $classItem : {},
-    
-    initialize: function(options) {
-        this.template = _.template($('#sheet_template').html());
-        
-        this.pc = options.pc;
-
-        var renderContent = this.template({});
-
-        // set views
-        this.$el.html(renderContent);
-        rpgt.NarrativeView = new rpgt.views.NarrativeView({
-            el: this.$('.ability_scores')
-        });
-        
-    },
-    
-    render: function () {
-        rpgt.NarrativeView.render();
-
-        return this;
-    },
 
  });
 
@@ -1473,6 +1462,7 @@ rpgt.views.NarrativeView = rpgt.views.DataForm.extend({
     fieldGroups: {
         narrative: {
             manageMode: 'admin',
+            padType: 'model',
             fields: ['id','name','description','description_short','oddity','type'],
 //            collection: set in initialize
         }
@@ -1560,8 +1550,6 @@ rpgt.views.ClassesView = rpgt.views.DataForm.extend({
 
 rpgt.views.NarrativeRelations = rpgt.views.RelationContainer.extend({
     
-    thisGroup: 'narrative',
-    
     relationForm: {},
     events: {
         'click .body > .add': 'onAddForm'
@@ -1573,8 +1561,8 @@ rpgt.views.NarrativeRelations = rpgt.views.RelationContainer.extend({
     getRelationForm: function()
     {
         return rpgt.views.NarrativeRelation.extend({ 
-            thisGroup: this.thisGroup,
-            foreignGroup: this.foreignGroup
+            thisGroup: 'narrative',
+            foreignGroup: this.foreignKey
         });
     },
     
@@ -1586,6 +1574,7 @@ rpgt.views.NarrativeRelations = rpgt.views.RelationContainer.extend({
     {
         e.preventDefault();
         this.addRelation();
+        this.writeHtml();
     },
     
 }).containsRelations();
@@ -1646,7 +1635,7 @@ rpgt.views.NarrativeRelation = rpgt.views.RelationInputs.extend({
 
 rpgt.views.NarrativeClassRelations = rpgt.views.NarrativeRelations.extend({
     
-    foreignGroup: 'classes',
+    foreignKey: 'classes',
     
     relationTemplate: '#narrativeclass_template',
     
@@ -1654,7 +1643,7 @@ rpgt.views.NarrativeClassRelations = rpgt.views.NarrativeRelations.extend({
 
 rpgt.views.NarrativeRaceRelations = rpgt.views.NarrativeRelations.extend({
     
-    foreignGroup: 'races',
+    foreignKey: 'races',
     
     relationTemplate: '#narrativerace_template',
     
@@ -1662,25 +1651,29 @@ rpgt.views.NarrativeRaceRelations = rpgt.views.NarrativeRelations.extend({
 
 rpgt.views.NarrativeFeatureRelations = rpgt.views.NarrativeRelations.extend({
     
-    foreignGroup: 'features',
-    
-    containerSelector: '.granted-features',
+    foreignKey: 'features',
     
     relationTemplate: '#narrativefeature_template',
-    modelAutocomplete: false,
     
     getRelationForm: function()
     {
         return rpgt.views.NarrativeFeatureableRelation;
     },
+    
 });
 rpgt.views.NarrativeFeatureableRelation = rpgt.views.NarrativeRelation.extend({
     
-    foreignGroup: 'featureable',
-    
-    relationTemplate: '#narrativefeatures_template',
-    hasFeatureable: false,
-    fields: ['id','name','description'],
+    fieldGroups: {
+        owner: {
+            fields: ['id'],
+        },
+        foreign: {
+            fields: ['id','name','description'],
+        },
+        pivot: {
+            fields: ['level'],
+        }
+    },
     autoCompleteGroups: {
         type: {
             seed: function()
@@ -1709,47 +1702,57 @@ rpgt.views.NarrativeFeatureableRelation = rpgt.views.NarrativeRelation.extend({
         }
     },
     
+    relationTemplate: '#narrativefeature_template',
+    
     initialize: function(options)
     {
         this.template = _.template($(this.relationTemplate).html());
         return this;
+//        this.template = _.template($(this.relationTemplate).html());
+//        return this;
     },
     render: function()
     {
-        var relationData, self = this;
-        if(_.isEmpty(this.relationData)) {
-            relationData = this.relationData = {
-                id: 0,
-                description: '',
-                name: 'new feature',
-                type: '',
-                pivot: {'level': 1}
-            };
-        } else {
-            relationData = this.relationData;
-            relationData.type = '';
-        }
+        var relationData = this.DataFields.getPadData('foreign');
+        
+        _.defaults(relationData, this.defaultData);
         this.$el.html(this.template(relationData));
-        
-        this.initFeatureableContainer({featureData: relationData});
-            
-        this.FeatureableContainer.render();
-        
-        this.$('.wysiwyg').summernote({
-                height: 250,
-                callbacks: {
-                    onChange: self.changeWysiwyg
-                }
-            });
+        //TODO: test pivot data
         return this.$el;
+//        var relationData, self = this;
+//        if(_.isEmpty(this.relationData)) {
+//            relationData = this.relationData = {
+//                id: 0,
+//                description: '',
+//                name: 'new feature',
+//                type: '',
+//                pivot: {'level': 1}
+//            };
+//        } else {
+//            relationData = this.relationData;
+//            relationData.type = '';
+//        }
+//        this.$el.html(this.template(relationData));
+//        
+//        this.initFeatureableContainer({featureData: relationData});
+//            
+//        this.FeatureableContainer.render();
+//        
+//        this.$('.wysiwyg').summernote({
+//                height: 250,
+//                callbacks: {
+//                    onChange: self.changeWysiwyg
+//                }
+//            });
+//        return this.$el;
     },
     readHtml: function()
     {
-        this.relationData.id = this.$('[name="id"]').val();
-        this.relationData.description = this.$('[name="description"]').val();
-        this.relationData.name = this.$('[name="name"]').val();
-        this.relationData.pivot.level = this.$('[name="level"]').val();
-        this.FeatureableContainer.readHtml();
+//        this.relationData.id = this.$('[name="id"]').val();
+//        this.relationData.description = this.$('[name="description"]').val();
+//        this.relationData.name = this.$('[name="name"]').val();
+//        this.relationData.pivot.level = this.$('[name="level"]').val();
+//        this.FeatureableContainer.readHtml();
         
         return this;
     },
