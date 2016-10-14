@@ -29,6 +29,7 @@
                     collection: rpgt.Narratives
                 });
                 rpgt.NarrativeView.render();
+                rpgt.NarrativeView.DataFields.readId();
                 
                 var pad = rpgt.NarrativeView.getPad('narrative');
                 
@@ -57,8 +58,10 @@
                 
                 //bind events
                 rpgt.NarrativeView.on('fields:swap:narrative', function(newPad) {
+                    window.console.log('narrative changed');
                     _.each(relationContainers, function(container) {
                         container.setThisPad(newPad);
+                        container.render();
                     });
                 });
                 rpgt.NarrativeView.on('fields:read', function() {
@@ -188,11 +191,11 @@
     <script type="text/template" id="narrativefeature_template" >
         <fieldset>
             <legend class="section"></legend>
-            <input type="hidden" name="feature_id" value="<%= id %>" />
+            <input type="hidden" name="foreign_id" value="<%= id %>" />
             <div class="form-group">
                 <label class="col-sm-3 control-label"><i>Feature name</i><span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="feature_name" class="form-control input-transparent"
+                    <input type="text" name="foreign_name" class="form-control input-transparent"
                            required="required" data-default="0" value="<%= name %>" >
                 </div>
             </div>
@@ -201,7 +204,7 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" >Level<span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="level" value="<%= pivot.level %>" class="form-control input-transparent"
+                    <input type="text" name="pivot_level" value="<%= pivot.level %>" class="form-control input-transparent"
                            required="required" data-default="0">
                 </div>
             </div>
@@ -210,7 +213,7 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label">Description<span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <textarea rows="10" name="feature_description" class="form-control input-transparent wysiwyg" ><%= description %></textarea>
+                    <textarea rows="10" name="foreign_description" class="form-control input-transparent wysiwyg" ><%= description %></textarea>
                 </div>
             </div>
         </fieldset>
@@ -218,7 +221,7 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name">Featureables Type</label>
                 <div class="col-sm-9">
-                    <input type="text" name="type" class="form-control input-transparent"
+                    <input type="text" name="type_name" class="form-control input-transparent"
                            data-auto_entries="types" value="<%= type %>" >
                 </div>
             </div>
@@ -239,8 +242,8 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name">Proficiency</label>
                 <div class="col-sm-9">
-                <input type="hidden" name="proficiency_id" value="<%= id %>" />
-                <input type="text" name="proficiency_name" class="form-control input-transparent"
+                <input type="hidden" name="foreign_id" value="<%= id %>" />
+                <input type="text" name="foreign_name" class="form-control input-transparent"
                        data-auto_entries="proficiency" value="<%= name %>" >
             </div>
     </script>
@@ -255,11 +258,11 @@
     <script type="text/template" id="narrativeclasses_template" >
         <fieldset>
             <legend class="section"></legend>
-            <input type="hidden" name="class_id" value="<%= id %>" />
+            <input type="hidden" name="foreign_id" value="<%= id %>" />
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name"><i>class</i><span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="class_name" class="form-control input-transparent"
+                    <input type="text" name="foreign_name" class="form-control input-transparent"
                            data-auto_entries="foreign" required="required" data-default="0" value="<%= name %>" >
                 </div>
             </div>
@@ -285,11 +288,11 @@
     <script type="text/template" id="narrativeraces_template" >
         <fieldset>
             <legend class="section"></legend>
-            <input type="hidden" name="id" value="<%= id %>" />
+            <input type="hidden" name="foreign_id" value="<%= id %>" />
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="name"><i>class</i><span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="race_name" class="form-control input-transparent"
+                    <input type="text" name="foreign_name" class="form-control input-transparent"
                            data-auto_entries="foreign" required="required" data-default="0" value="<%= name %>" >
                 </div>
             </div>
@@ -298,7 +301,7 @@
             <div class="form-group">
                 <label class="col-sm-3 control-label" for="oddity">Oddity<span class="required">*</span></label>
                 <div class="col-sm-9">
-                    <input type="text" name="oddity" value="<%= pivot.oddity %>" class="form-control input-transparent"
+                    <input type="text" name="pivot_oddity" value="<%= pivot.oddity %>" class="form-control input-transparent"
                            required="required" data-default="0">
                 </div>
             </div>

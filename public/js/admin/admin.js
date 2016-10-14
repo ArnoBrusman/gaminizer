@@ -40,10 +40,14 @@ _.extend(AutoCompleteEntryGroup.prototype, {
         this._entries.push(rEntry);
         return this;
     },
+    /**
+     * {name,id,value}
+     */
     renderEntry: function(entry)
     {
         var string = "%% " + entry.name + " %%",
-            html = ["<span>", "</span>"],
+            html = ["<span>", "</span>"], aCval;
+        entry.value || (entry.value = entry.name);
             aCval = this.attributes.id + '/' + entry.value;
         return {string: string, html: html, value: aCval};
     },
@@ -72,20 +76,15 @@ var AutoCompleteEntryGroups = Backbone.Collection.extend({
             entryGroups = [entryGroups];
         }
 
-            window.console.log('getting entries');
         if(_.isArray(entryGroups)) {
             _.each(entryGroups, function(groupId) {
-                    window.console.log(groupId);
                 autoCompleteEntries = autoCompleteEntries.concat(self.get(groupId).get());
-                    window.console.log(_.result(self.get(groupId).attributes,'seed'));
             });
         } else if(_.isUndefined(entryGroups)) {
             _.each(this.models, function(group) {
                 autoCompleteEntries = group.get();
             });
         }
-            window.console.log(entryGroups);
-            window.console.log(autoCompleteEntries);
         return autoCompleteEntries;
     },
         
@@ -335,7 +334,7 @@ var FieldRegistry = Backbone.Model.extend({
     /*
     attributes: { fieldName : fieldValue }
      */
-    $fields: {/* { fieldName: $field} */},
+//    $fields: {/* { fieldName: $field} */},
 
     initialize: function(attributes, options) {
         var defaultOptions = {
@@ -346,6 +345,7 @@ var FieldRegistry = Backbone.Model.extend({
             autoUpdate: false, // set to true when the fields should update whenever the dataSeed changes (values).
             context: null,
         };
+        this.$fields = {};
         this.options = _.defaults(options, defaultOptions);
         _.extend(this, _.pick(this.options, ['prefix','fields','context','pad','seed']));
 
@@ -512,7 +512,6 @@ var FieldRegistry = Backbone.Model.extend({
                 this.gatherField(fieldName);
             }, this);
         }
-        
         return this;
     },
     gatherField: function(fieldName)
@@ -524,7 +523,7 @@ var FieldRegistry = Backbone.Model.extend({
     /** gets or sets the value of the html fields */
     fieldVal: function(field, value, options)
     {
-        if(value && !_.isObject(value)) {
+        if(!_.isUndefined(value) && !_.isObject(value)) {
             return this._writeField(field, value, options);
         } else {
             return this._getFieldValue(field, value); //value = options
@@ -582,6 +581,21 @@ var FieldRegistry = Backbone.Model.extend({
     _getField: function(name)
     {
         return this.$fields[name];
+    },
+    
+    /**
+     * Setup the form for insertion for new values.
+     * @returns {undefined}
+     */
+    wipe: function()
+    {
+        _.each(this.$fields, function($field) {
+            var fieldDefault, _fieldDefault = $field.attr('data-default');
+            fieldDefault = _.isUndefined(_fieldDefault) ? '' : _fieldDefault;
+
+            this.fieldVal($field, fieldDefault);
+
+        },this);
     },
     
 });
@@ -644,6 +658,8 @@ var FieldRegistries = Backbone.Collection.extend({
 
 var DataFieldsInterface = function(options)
 {
+    this.groups = {};
+    this.Registries = {};
     this.options = options || {};
     this.context = options.context;
     this.groups = options.groups || {};
@@ -651,7 +667,6 @@ var DataFieldsInterface = function(options)
 };
 _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     
-    groups: {},
     
     initGroups: function(options)
     {
@@ -698,8 +713,6 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
             for (var grId in options.autoCompleteGroups) {
                 var grSeed = options.autoCompleteGroups[grId].seed,
                         grHandler = options.autoCompleteGroups[grId].onAutoComplete;
-                    window.console.log('check seed of ' + grId);
-                    window.console.log(grSeed());
                 this.AutoComplete.addGroup(grId, grSeed, grHandler);
             }
         }
@@ -806,7 +819,6 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     
     RegistryModel: FieldRegistry,
     RegistryCollection: FieldRegistries,
-    Registries: {},
     
     initRegistries: function(options)
     {
@@ -845,6 +857,11 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
     revertChanges: function()
     {
         this.Registries.reseed();
+        return this;
+    },
+    wipeFields: function(groupId)
+    {
+        this.getFields(groupId).wipe();
         return this;
     },
     
@@ -930,6 +947,7 @@ rpgt.views.DataForm = Backbone.View.extend({
             autoCompleteGroups: this.autoCompleteGroups
         });
         
+        //forwarding events
         this.listenTo(this.DataFields, 'all', function(event) {
             var eventArgs = arguments;
 //                window.console.log(typeof arguments);
@@ -949,7 +967,6 @@ rpgt.views.DataForm = Backbone.View.extend({
             }
         });
         this.DataFields.gather();
-        this.DataFields.readId();
     },
     
     getFields: function(groupId)
@@ -963,15 +980,16 @@ rpgt.views.DataForm = Backbone.View.extend({
         }
         return this.DataFields.getFields(groupId).getPad();
     },
-    setPad: function(groupId, pad) {
+    setPad: function(groupId, pad) 
+    {
         if(!_.isString(groupId) && this.primaryGroup) {
             pad = groupId;
             groupId = _.result(this,'primaryGroup');
         }
-        return this.getField(groupId).setPad(pad);
+        return this.getFields(groupId).setPad(pad);
     },
     
-    remove: function() 
+    remove: function()
     {
         this.DataFields.AutoComplete.destroyInputs();
         this._removeElement();
@@ -1010,42 +1028,30 @@ rpgt.views.DataForm.isAdminForm = function ()
         {
             this.autoCompleteGroups = this.autoCompleteGroups || {};
             if(this.autoCompleteGroups.new) return;
-            var self = this;
-            this.autoCompleteGroups.new = {
-                seed: function() {
-                    return [{
-                        html: ["<span>", "</span>"],
+            var self = this,
+                    newSeeds = [];
+            
+            _.each(self.fieldGroups, function(group, groupId) {
+                if(group.manageMode === 'admin') {
+//                        window.console.log(groupId);
+                    newSeeds.push({
                         name: "New",
-                        string: "%% New %%"
-                    }];
-                },
-                onAutoComplete: function(event, value) {
-                    _.each(self.fieldGroups, function(group, groupName) {
-                        if(group.manageMode === 'admin') {
-                            self.setPad({});
-                        }
+                        value: groupId
                     });
-                    event.target.value = value;
+                    
+                }
+            });
+            
+            this.autoCompleteGroups.new = {
+                seed: newSeeds,
+                onAutoComplete: function(event, value) {
+                    window.console.log('autoComplete: new');
+                    self.DataFields.wipeFields(value)
+                    event.target.value = 'New';
+//                    window.console.log();
                 }
             };
             return this;
-        },
-        
-        /**
-         * Setup the form for insertion for a new model.
-         * @returns {undefined}
-         */
-        setNewForm: function()
-        {
-            _.each(this._fields, function($field) {
-                var fieldDefault, _fieldDefault = $field.attr('data-default');
-                fieldDefault = _.isUndefined(_fieldDefault) ? '' : _fieldDefault;
-                
-                this.fieldVal($field, fieldDefault);
-                
-            },this);
-            
-            this.setPad( new this.model());
         },
         
         /**
@@ -1212,8 +1218,10 @@ rpgt.views.RelationContainer = Backbone.View.extend({
     {
         this.foreignViews = [];
         this.removeRelations();
-        for (var i = 0; i < pads.length; i++) {
-            this.addRelation(pads[i]);
+        if(pads) {
+            for (var i = 0; i < pads.length; i++) {
+                this.addRelation(pads[i]);
+            }
         }
     },
     addRelation: function(pad)
@@ -1252,7 +1260,7 @@ rpgt.views.RelationContainer = Backbone.View.extend({
         this.listenTo(relationForm, 'fields:swap:'+ this.foreignGroup, function(newPad, oldPad){
             this.changeFormRelation(relationForm);
         });
-        relationForm.on('pad:'+ this.thisGroup +':update', this.changeFormRelation, this);
+//        relationForm.on('pad:'+ this.thisGroup +':update', this.changeFormRelation, this);
         this.foreignViews.push(relationForm);
     },
     removeRelation: function(relationForm)
@@ -1339,7 +1347,12 @@ rpgt.views.RelationContainer.containsRelations = function() // TODO: rename
             // TODO: debug: the foreignViews has an object reference somewhere that should be a seperate object
             _render.apply(this, arguments);
             
+            this.renderContainer();
+        },
+        renderContainer: function()
+        {
             var $container = this.$(this.container);
+            $container.html('');
             
             for (var i = 0; i < this.foreignViews.length; i++) {
                 this.foreignViews[i].render();
@@ -1674,24 +1687,16 @@ rpgt.views.NarrativeFeatureableRelation = rpgt.views.NarrativeRelation.extend({
             {
                 return [
                     {
-                        string: "%% Proficiency %%",
-                        html: ["<span>", "</span>"],
-                        id: "type/proficiency"
+                        name: "Proficiency",
                     },
                     {
-                        string: "%% Action %%",
-                        html: ["<span>", "</span>"],
-                        id: "type/actions"
+                        name: "Action",
                     },
                     {
-                        string: "%% Spellcasting %%",
-                        html: ["<span>", "</span>"],
-                        id: "type/spellcasting"
+                        name: "Spellcasting",
                     },
                     {
-                        string: "%% Stat Modifier %%",
-                        html: ["<span>", "</span>"],
-                        id: "type/stat_modifier"
+                        name: "Stat Modifier",
                     },
                 ];
             },
