@@ -24,29 +24,46 @@
         rpgt.fetchResources([rpgt.Narratives, rpgt.Classes, rpgt.Races, rpgt.Features], {
             success: function () {
                 var relationContainers;
-                rpgt.NarrativeView = new rpgt.views.NarrativeView({
+                {#rpgt.NarrativeView = new rpgt.views.NarrativeView({
                     el: $('#narratives_view'), 
                     collection: rpgt.Narratives
+                });#}
+                rpgt.NarrativeView = new rpgt.views.AdminView({
+                    el: $('#narratives_view'),
+                    fieldGroups: {
+                        narrative: {
+                            manageMode: 'admin',
+                            padType: 'model',
+                            fields: ['id','name','description','description_short','oddity','type'],
+                            model: rpgt.models.Narrative,
+                            collection: rpgt.Narratives,
+                        }
+                    },
+                    primaryGroup: 'narrative',
+                    
                 });
                 rpgt.NarrativeView.render();
                 rpgt.NarrativeView.DataFields.readId();
                 
                 var pad = rpgt.NarrativeView.getPad('narrative');
                 
-                rpgt.NarrativeClassRelations = new rpgt.views.NarrativeClassRelations({
+                rpgt.NarrativeClassRelations = new rpgt.views.NarrativeRelations({
                     el: $('#narrativeclasses'),
+                    foreignKey: 'classes',
                     foreignCollection: rpgt.Classes,
                     pad: pad,
                 });
                 rpgt.NarrativeClassRelations.render();  
-                rpgt.NarrativeRaceRelations = new rpgt.views.NarrativeRaceRelations({
+                rpgt.NarrativeRaceRelations = new rpgt.views.NarrativeRelations({
                     el: $('#narrativeraces'),
+                    foreignKey: 'races',
                     foreignCollection: rpgt.Races,
                     pad: pad,
                 });
                 rpgt.NarrativeRaceRelations.render();  
-                rpgt.NarrativeFeatureRelations = new rpgt.views.NarrativeFeatureRelations({
+                rpgt.NarrativeFeatureRelations = new rpgt.views.NarrativeRelations({
                     el: $('#narrativefeatures'),
+                    foreignKey: 'features',
                     foreignCollection: rpgt.Features,
                     pad: pad,
                 });
