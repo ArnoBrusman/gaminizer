@@ -453,12 +453,12 @@ var FieldRegistry = Backbone.Model.extend({
 
     getPadData: function(index)
     {
-        var padResult;
+        var padResult, pad = this.getPad();
 
         if(this._padIsModel()) {
-            padResult = _.clone(this.pad.attributes);
+            padResult = _.clone(pad.attributes);
         } else {
-            padResult = _.clone(this.pad);
+            padResult = _.clone(pad);
         }
 
         return index ? padResult[index] : padResult;
@@ -787,9 +787,20 @@ _.extend(DataFieldsInterface.prototype, Backbone.Events, {
         }
         return pads;
     },
-    getPad: function(groupId)
+    /**
+     * Get pad of a group.
+     */
+    getPad: function(groupId, options)
     {
-        return this.Registries.get(groupId).getPad();
+        var pad = this.Registries.get(groupId).getPad();
+        if(options.merge) {
+            for (var i = 0; i < options.merge; i++) {
+                var fPad = this.Registries.get(options.merge[i]).getPad();
+                if(padIsModel(pad)) pad.set(fPad);
+                else pad[options.merge[i]] = fPad;
+            }
+        }
+        return pad;
     },
     getPadData: function(groupId)
     {
@@ -1223,7 +1234,10 @@ rpgt.views.RelationContainer = Backbone.View.extend({
     getForeignPads: function() {
         var foreignPads = [];
         for (var i = 0; i < this.foreignViews.length; i++) {
-            foreignPads.push(this.foreignViews[i].getPad('foreign'));
+            var fPad = this.foreignViews[i].getPad('foreign'),
+                    pPad = this.foreignViews[i].getPad('pivot');
+            fPad.pivot = pPad;
+            foreignPads.push(fPad);
         }
         return foreignPads;
     },
@@ -1430,6 +1444,12 @@ rpgt.views.DataForm.representsRelation = function ()
             e.preventDefault();
             this.DataFields.AutoComplete.showAll($(e.target));
         },
+        
+        readHtml: function()
+        {
+            
+        }
+        
     });
     _.extend(this.prototype, {
             // EXPAND: options.
@@ -1715,20 +1735,25 @@ rpgt.views.NarrativeFeatureRelation = rpgt.views.NarrativeRelation.extend({
 //        this.template = _.template($(this.relationTemplate).html());
 //        return this;
     },
-    render: function()
-    {
-        var relationData = this.DataFields.getPadData('foreign');
-        
-        _.defaults(relationData, this.defaultData);
-        this.$el.html(this.template(relationData));
-        //TODO: test pivot data
-        return this.$el;
-    },
+    
     initFeatureableContainer: function(args)
     {
         var containerArguments = _.extend({el: this.$('.featureables')}, args );
         this.FeatureableContainer = new rpgt.views.FeatureablesContainer(containerArguments);
         return this;
+    },
+    
+    getPad: function(groupId) {
+        if(!groupId && this.primaryGroup) {
+            groupId = _.result(this,'primaryGroup');
+        }
+        if(groupId === 'foreign') {
+            var fPad = this.DataFields.getPad('foreign');
+            //CODE: insert featureables
+            return fPad;
+        } else {
+            return this.DataFields.getFields(groupId).getPad();
+        }
     },
     
 }).representsRelation();
