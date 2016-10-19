@@ -1,8 +1,32 @@
 (function($,_,Backbone,rpgt){
 
+
+
 String.prototype.capitalizeFirstLetter = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 };
+
+//-----------------------------------------------------
+// AutoCompleters
+//-----------------------------------------------------
+
+var SelectizeAutoComplete = function()
+{
+    return {
+        initialize: function($input, ACI) {
+            
+        },
+        displayAll: function() {
+            
+        },
+        setEntries: function(newEntries) {
+            
+        },
+        unbindGlobalEvents: function() {
+            
+        },
+    };
+}; 
 
 /**
  * 
