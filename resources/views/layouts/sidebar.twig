@@ -1,0 +1,46 @@
+<nav id="sidebar" class="sidebar nav-collapse collapse">
+    <ul id="side-nav" class="side-nav">
+        <li class="{{page.conditionClass("active", active, "index")}}">
+            <a href="{{ route('admin') }}"><i class="fa fa-home"></i> <span class="name">Dashboard</span></a>
+        </li>
+        <li class="panel {{page.conditionClass("active", active, "narratives races classes feats features")}}">
+            <a class="accordion-toggle {{page.conditionClass("collapsed", active, "form_account form_article form_elements form_validation form_wizard", true)}}" data-toggle="collapse"
+               data-parent="#side-nav" href="#forms-collapse"><i class="fa fa-pencil"></i> <span class="name">Character Aspects</span></a>
+            <ul id="forms-collapse" class="panel-collapse collapse {{page.conditionClass("in", active, "form_account form_article form_elements form_validation form_wizard")}}">
+                <li class="{{page.conditionClass("active", active, "narratives")}}"><a href="{{ route('admin::narratives') }}">Narratives</a></li>
+                <li class="{{page.conditionClass("active", active, "races")}}"><a href="{{ route('admin::races') }}">Races</a></li>
+                <li class="{{page.conditionClass("active", active, "classes")}}"><a href="{{ route('admin::classes') }}">Classes</a></li>
+                <li class="{{page.conditionClass("active", active, "feats")}}"><a href="{{ route('admin::feats') }}">Feats</a></li>
+                <li class="{{page.conditionClass("active", active, "features")}}"><a href="{{ route('admin::features') }}">Features</a></li>
+            </ul>
+        </li>
+        <li class="visible-xs">
+            <a href="login.html"><i class="fa fa-sign-out"></i> <span class="name">Sign Out</span></a>
+        </li>
+    </ul>
+
+    <h5 class="sidebar-nav-title">Labels <a class="action-link" href="#"><i class="glyphicon glyphicon-plus"></i></a></h5>
+    <!-- some styled links in sidebar. ready to use as links to email folders, projects, groups, etc -->
+    <ul class="sidebar-labels">
+        <li>
+            <a href="#">
+                <!-- yep, .circle again -->
+                <i class="fa fa-circle text-warning"></i>
+                <span class="label-name">My Recent</span>
+            </a>
+        </li>
+        <li>
+            <a href="#">
+                <i class="fa fa-circle text-gray"></i>
+                <span class="label-name">Starred</span>
+            </a>
+        </li>
+        <li>
+            <a href="#">
+                <i class="fa fa-circle text-danger"></i>
+                <span class="label-name">Background</span>
+            </a>
+        </li>
+    </ul>
+
+</nav>

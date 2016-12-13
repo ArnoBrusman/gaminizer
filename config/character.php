@@ -4,7 +4,6 @@
 /*
  * Example description
  */
-$config['attributes'] = '';
 
 $config['hr_stats'] =  array(
     'STR' => 'strength',
@@ -65,10 +64,21 @@ $config['hr_stats'] =  array(
     'WARL' => 'warlock',
     'WIZA' => 'wizard',
     'ACT' => 'action',
+    // ability modifiers (not to be confused with ability score modifiers)
+    'ML_DMG' => 'melee damage',
+    'ML_ATT' => 'melee attack',
+    'RN_DMG' => 'ranged damage',
+    'RN_ATT' => 'ranged attack',
+    'SP_DMG' => 'spell damage',
+    'SP_ATT' => 'spell attack',
+    
+  );
+
+$config['item_tags'] = [
     //items
     'MRTL' => 'martial',
     'SMPL' => 'simple',
-  );
+];
 
 $config['ability_scores'] = array(
   'strength' =>  'STR',
@@ -97,5 +107,10 @@ $config['core_skills'] = array(
     'manipulation' => 'MAN',
     'obscuration' => 'OBS'
 );
+
+$config['proficiency_types'] = [
+    'CORE',
+    'RBN' //ribbon proviciency
+];
 
 return $config;

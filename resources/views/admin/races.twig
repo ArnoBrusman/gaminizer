@@ -1,0 +1,232 @@
+{% extends "base.twig" %}
+
+{#{% do page.add_script('wysihtml5', 'lib/bootstrap3-wysihtml5-bower/dist/bootstrap3-wysihtml5.all.js', {require : ['jquery', 'bootstrap']} ) %}#}
+{% do page.add_script('summernote', 'summernote/summernote.min.js', {require: ['bootstrap']}) %}
+{% do page.add_script('messenger', 'lib/messenger/build/js/messenger.js' ) %}
+{% do page.add_script('messenger_theme', 'lib/messenger/build/js/messenger-theme-flat.js' ) %}
+{% do page.add_script('ui-notifications', 'lightblue/ui-notifications.js', {require: ['messenger','messenger_theme', 'app']} ) %}
+{#{% do page.add_script('bootstrap-select', 'lib/bootstrap-select/dist/js/bootstrap-select.min.js', {require: ['bootstrap'} ) %}#}
+{#{% do page.add_script('select2', 'lib/select2/select2.min.js', {require: ['bootstrap-select'} ) %}#}
+{% do page.add_script('adminjs', 'admin/admin.js', {require : ['rpgtjs', 'underscore', 'autocomplete', 'summernote']} ) %}
+
+{% do page.add_style('summernote.css') %}
+
+{% do page.add_style('autocomplete.css') %}
+
+{% block sidebar %}
+    {% include 'layouts.sidebar' with { 'active' : 'races' } %}
+{% endblock %}
+{% block app_content %}
+    
+    <script type="text/javascript">
+    $(document).ready(function(){
+        rpgt.AutoComplete = new AutoComplete();
+        rpgt.createGlobalResources();
+        rpgt.fetchResources([rpgt.Races], {
+            success: function () {
+                rpgt.RacesView = new rpgt.views.RacesView({
+                    el: $('#races_view'), 
+                    collection: rpgt.Races
+                });  
+            }
+        });
+    });
+    </script>
+    
+    <h2 class="page-title">Races</h2>
+    <div class="row">
+        <div class="col-lg-8">
+            <section id="races_view" class="widget form-horizontal">
+                <div class="row">
+                    <label class="col-sm-3 control-label" for="title">Select races: </label>
+                    <div class="col-sm-9">
+                        <input class="form-control input-transparent" id="race_select" type="text" value="New" />
+                        <input id="class_id" name="id" value="" type="hidden" />
+                    </div>
+                </div>
+                <hr />
+                <header>
+                    <h4><i class="fa fa-file-alt"></i> Narrative <small>Create new or edit existing race</small></h4>
+                </header>
+                <div class="body">
+                    <form class="form-horizontal" role="form" id="race-form" method="post" novalidate="novalidate"
+                          data-parsley-priority-enabled="false">
+                        <fieldset>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label" for="name">Name <span class="required">*</span></label>
+                                <div class="col-sm-9">
+                                    <input type="text" id="name" name="name" class="form-control input-transparent"
+                                           required="required">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label" for="content">
+                                    description
+                                </label>
+                                <div class="col-sm-9">
+                                    <textarea rows="10" name="description" class="form-control input-transparent wysiwyg" id="description"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="description" class="col-sm-3 control-label">description (short)</label>
+                                <div class="col-sm-9">
+                                    <textarea id="description_short" name="description_short" rows="3" name="text" class="form-control input-transparent"></textarea>
+                                    <span class="help-block">Optional summary of your article that can be used in previews</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label" for="parent_id">parent_id<span class="required">*</span></label>
+                                <div class="col-sm-9">
+                                    <input type="text" id="parent_id" name="parent_id" class="form-control input-transparent"
+                                           required="required" value="" data-default="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label" for="type">Type<span class="required">*</span></label>
+                                <div class="col-sm-9">
+                                    <input type="text" id="type" name="type" class="form-control input-transparent"
+                                           required="required" value="" data-default="CORE">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="form-actions">
+                            <div class="row">
+                                <div class="col-sm-9 col-sm-offset-3">
+                                    <div class="btn-toolbar">
+                                        <button type="submit" class="btn btn-success">Submit</button>
+                                        <button id="cancle" type="button" class="btn btn-default">Cancel</button>
+                                        <button id="delete" type="button" class="btn btn-danger">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            <section class="widget form-horizontal">
+                <h3>Race features</h3>
+                <div class="row"></div>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <section class="widget">
+                <header>
+                    <h4><i class="fa fa-cog"></i> Options <small>Publishing, categories</small></h4>
+                </header>
+                <div class="body">
+                    <form id="article-options" class="form-horizontal form-label-left"
+                          method="post">
+                        <fieldset>
+                            <legend class="section">Publishing</legend>
+                            <div class="form-group">
+                                <label for="article-status" class="control-label col-sm-4">Status</label>
+                                <div class="col-sm-8">
+                                    <select id="article-status" name="article-status"
+                                            data-style="btn-success"
+                                            data-width="auto"
+                                            class="selectpicker">
+                                        <option value="0">Draft</option>
+                                        <option value="1">Published</option>
+                                        <option value="2">Pending Review</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="publish-date" class="control-label col-sm-4">Publish at</label>
+                                <div class="col-sm-8">
+                                    <input type="text" id="publish-date" name="publish-date" class="form-control date-picker">
+                                    <input type="text" id="publish-time" name="publish-time" class="form-control mt-sm">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="article-language" class="control-label col-sm-4">Language</label>
+                                <div class="col-sm-8">
+                                    <select id="article-language" name="article-language"
+                                            data-style="btn-success"
+                                            data-width="auto"
+                                            class="selectpicker">
+                                        <option value="0">All Languages</option>
+                                        <option value="1">English</option>
+                                        <option value="2">Belarusian</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend class="section">Category & Tags</legend>
+                            <div class="form-group">
+                                <label for="article-category" class="control-label col-sm-4">Category</label>
+                                <div class="col-sm-8">
+                                    <select id="article-category" name="article-category"
+                                            data-style="btn-warning"
+                                            data-width="auto"
+                                            class="selectpicker">
+                                        <option value="0">Design</option>
+                                        <option value="1">Bootstrap</option>
+                                        <option value="2">ThemeForest</option>
+                                        <option value="3">Personal Developement</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="article-tags" class="control-label col-sm-4">Tags</label>
+                                <div class="col-sm-8">
+                                    <input type="text" id="article-tags" name="article-tags"
+                                           class="select-block-level">
+                                    <span class="help-block">Write or select a tag and press "Enter" to add it.</span>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+            </section>
+            {#<section class="widget">
+                <header>
+                    <h4><i class="fa fa-key"></i> Access</h4>
+                </header>
+                <div class="body">
+                    <form id="article-access" class="form-horizontal form-label-left"
+                          method="post">
+                        <fieldset>
+                            <div class="form-group">
+                                <label for="article-visibility" class="control-label col-sm-4">Visibility</label>
+                                <div class="col-sm-8">
+                                    <select id="article-visibility" name="article-visibility"
+                                            data-style="btn-warning"
+                                            data-width="auto"
+                                            class="selectpicker">
+                                        <option value="0">Everyone</option>
+                                        <option value="1">Registered</option>
+                                        <option value="2">Editors</option>
+                                        <option value="3">Admins</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="article-password" class="control-label col-sm-4">Password</label>
+                                <div class="col-sm-8">
+                                    <input type="password" id="article-password" class="form-control" name="article-password">
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+            </section>#}
+        </div>
+    </div>
+    {#<div id="admin_view">
+    <h1>admin index</h1>
+    
+    </div>
+    <div id="narratives_view">
+        <h2>Narrative</h2>
+        <p>
+            Select Narrative: <input id="narrative_select" type="text" />
+        </p>
+        
+        {% include 'admin.narrative' %}
+    </div>#}
+
+{% endblock %}

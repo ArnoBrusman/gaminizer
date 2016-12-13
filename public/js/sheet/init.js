@@ -1,8 +1,9 @@
 $(document).ready(function(){
-    rpgt.createGlobalResources();
+    var char_id = 1;
+    rpgt.createGlobalResources(char_id);
     rpgt.fetchResources({
         success: function() {
-            rpgt.SheetView = new rpgt.views.SheetView({ el: $('<div id="sheet">').appendTo($('#page')) });
+            rpgt.SheetView = new rpgt.views.SheetView({ el: $('<div id="sheet">').appendTo($('#page')), pc: rpgt.currentPC });
             rpgt.SheetView.render();
 //            $('#page').append(rpgt.SheetView.render());    
         }
@@ -14,11 +15,19 @@ $(document).ready(function(){
 //define view
 rpgt.views.SheetView = Backbone.View.extend({
     
-    initialize: function() {
+    events: {
+        'autocomplete .header_item' : 'autoCompleteHandler'
+    },
+    
+    pc: {},
+    $classItem : {},
+    
+    initialize: function(options) {
         this.template = _.template($('#sheet_template').html());
+        
+        this.pc = options.pc;
 
-        var renderContent = this.template({
-        });
+        var renderContent = this.template({});
 
         // set views
         this.$el.html(renderContent);
@@ -28,6 +37,7 @@ rpgt.views.SheetView = Backbone.View.extend({
         rpgt.SheetHeaderView = new rpgt.views.SheetHeaderView({
             el: this.$el.find('.sheet_header')
         });
+        this.addSheetHeaderItems(rpgt.SheetHeaderView);
         rpgt.SavesView = new rpgt.views.SavesView({
             el: this.$el.find('.saves')
         });
@@ -56,6 +66,7 @@ rpgt.views.SheetView = Backbone.View.extend({
             el: this.$el.find('.spellslots')
         });
         
+        return this;
     },
     
     render: function () {
@@ -71,6 +82,47 @@ rpgt.views.SheetView = Backbone.View.extend({
         rpgt.SpellslotsView.render();
 
         return this;
+    },
+
+    addSheetHeaderItems: function(SheetHeader)
+    {
+        var pcName, pcClasses;
+        
+        pcName = SheetHeader.pc.get('name');
+        pcClasses = SheetHeader.pc.get('classes');
+        
+        //add items
+        SheetHeader.add_item('character', pcName, {label: 'name'});
+        
+        var classAutoCompleteItems = rpgt.CoreClasses.createAutoCompleteEntries();
+        
+        if(_.isEmpty(pcClasses)) {
+            this.$classItem = SheetHeader.add_item('class', '', {label: 'Class'});
+            rpgt.AutoComplete.initialize(this.$classItem, classAutoCompleteItems);
+        } else {
+            // Include all classes
+        }
+        
+        return this;
+    },
+
+
+    autoCompleteHandler: function(event, $element)
+    {
+        var aCValue = $element.attr("data-autocomplete-value");
+        var match = aCValue.match(/(\w+)\/(\d+)/);
+        var value = '';
+        
+        //set pc class
+        switch (match[1]) {
+            case "class": 
+                var cClass = rpgt.CoreClasses.get(match[2]);
+                //set the result in the head
+                this.$classItem.find('input').val(cClass.get('name'));
+                this.pc.set('class', cClass);
+                break;
+        }
+        
     }
 
  });

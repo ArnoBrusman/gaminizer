@@ -3,8 +3,12 @@
 namespace Gaminizer\ViewComposers;
 
 use Illuminate\View\View;
+use Gaminizer\Proficiency;
+use Gaminizer\Narrative;
+use Gaminizer\CharacterClass;
+use Gaminizer\Race;
 
-class InitComposer extends TwigComposer
+class InitComposer extends BaseComposer
 {
     var $character;
 
@@ -36,9 +40,19 @@ class InitComposer extends TwigComposer
      */
     public function compose(View $view)
     {
+        $view = parent::compose($view);
         $data = $this->getData();
-        $data['function_test'] = function() { return 'function works'; };
         $view->with($data);
+        $view->with([
+            'csrf_token' => csrf_token(),
+            'hr_stats' => json_encode(config('character.hr_stats')),
+            'core_proficiencies' => Proficiency::core(),
+            'core_narratives' => Narrative::core(),
+            'core_classes' => CharacterClass::core(),
+            'core_races' => Race::core()
+            ]);
+        
+        return $view;
     }
     
 }

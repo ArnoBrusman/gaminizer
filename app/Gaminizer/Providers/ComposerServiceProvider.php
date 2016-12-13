@@ -20,11 +20,10 @@ class ComposerServiceProvider extends ServiceProvider
         view()->composer(
             'init', 'Gaminizer\ViewComposers\InitComposer'
         );
+        view()->composer(
+            ['admin.*'], 'Gaminizer\ViewComposers\AdminComposer'
+        );
 
-        // Using Closure based composers...
-//        view()->composer('dashboard', function ($view) {
-//            //
-//        });
     }
 
     /**

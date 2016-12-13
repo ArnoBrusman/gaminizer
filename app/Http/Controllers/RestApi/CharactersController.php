@@ -2,87 +2,115 @@
 
 namespace App\Http\Controllers\RestApi;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
+use Gaminizer\Characters\Pc;
+use App\Http\Controllers\RestApi\RestApiController;
 
-use Gaminizer\Pc;
-
-class CharactersController extends RestApiController
-{
+class CharactersController extends RestApiController {
     
     function test()
     {
         // call /characters/test for this function
     }
 
-
-    //-----------------------------------------------------
-    // Getters
-    //-----------------------------------------------------
     
-    function getAll()
+    /* -----------------------------------------------------*\
+     * Getters
+     * -----------------------------------------------------*/
+    
+    /** Resource Getters **/
+    
+    function index()
     {
-        // get only foreign IDs to not overload client JS
-        $data = Pc::with(['pcFeatures', 'pcClasses', 'stats'])->get();
+//      $pc = Pc::with(['pcFeatures', 'pcClasses', 'stats', 'proficiencies'])->find($id);
+        $relation = Pc::with(['features', 'classes', 'statModifiers', 'proficiencies']);
         
-        return response($data)->header('Content-type', 'application/json');
+        $collection = $relation->get();
+        
+        foreach ($collection as &$model) {
+            $model->stats_results = $model->statModifiers->statsResults();
+        }
+        
+        return response($collection)->header('Content-type', 'application/json');
     }
 
-    function getOne($id)
-    {
-        $responseData = Pc::find($id)->toJson();
-        return response($responseData)->header('Content-type', 'application/json');
-    }
-  
     /**
-     * TODO: make 'elaborate' work somehow
-     * @param type $elaborate
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
      */
-    function ability_scores($id = NULL) 
+    public function create()
     {
-        
-        $elaborate = $this->request->input('elaborate');
+        //
+    }
 
-        if($id !== NULL) {
-            $characters = Pc::find($id);
-        } else {
-            $characters = Pc::all();
-        }
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function store()
+    {
+        //
+    }
+
+    function show($id)
+    {
+//        $pc = Pc::with(['pcFeatures', 'pcClasses', 'stats', 'proficiencies'])->find($id);
+        $relation = Pc::with(['features', 'classes', 'statModifiers', 'proficiencies']);
         
-        foreach($characters as $character) {
-            $data = $character->get_ability_scores($elaborate);
+        $model = $relation->find($id);
+        
+        $model->stats_results = $model->statModifiers->statsResults();
+        
+        return response($model)->header('Content-type', 'application/json');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        //
+    }
+    
+    function update($id)
+    {
+        $success = false;
+        $Pc = Pc::find($id);
+        
+        if ($this->request->isMethod('put') && $Pc->exists) {
+            $input = $this->request->all();
+            $success = $Pc->update($input);
+            return response($Pc->toJson())->header('Content-type', 'application/json');
+        } else {
+            abort(404);
         }
+    }
+  
+    function changeBatch()
+    {
+        return false;
+    }
+    
+    /** Misc Getters **/
+    
+    function stats($id)
+    {
+        $type = $this->request->input('type', NULL);
+        $pc = Pc::find($id);
+        $relation = $pc->stats();
+        if(!is_null($type)) {
+            $relation = $relation->where('type', $type);
+        }
+        $data = $relation->get();
         
         return response($data)->header('Content-type', 'application/json');
     }
-  
-    function stats($id = NULL)
-    {
-        $elaborate = $this->request->input('elaborate');
-        $type = $this->request->input('type');
-
-        if(!is_numeric($id)) {
-            $characters = Pc::all();
-        } else {
-            $characters = Pc::find($id);
-        }
-        if($characters instanceof Collection) {
-            $data = array();
-            foreach($characters as $character) {
-                $stats = $character->get_stats($type, $elaborate);
-                
-                $stats['id'] = $character['id'];
-                $data[] = $stats;
-            }
-        } else {
-            $data = $characters->get_stats($type, $elaborate);
-        }
-        
-        return response($data)->header('Content-type', 'application/json');
-    }
-  
+      
     function classes($id = NULL)
     {
         $elaborate = $this->request->input('elaborate');
@@ -113,5 +141,6 @@ class CharactersController extends RestApiController
       
       return response($data)->header('Content-Type', 'application/json');
     }
+    
     
 }

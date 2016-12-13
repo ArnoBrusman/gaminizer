@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="" dir="">
+    <head>
+        <link rel="stylesheet" type="text/css" href="/css/form.css">
+        <script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                $('#login').submit(function(event){
+                    var $form = $(this);
+                    event.preventDefault();
+                    $.ajax('login',
+                    {
+                        beforeSend: sendAuth,
+                        method: 'POST',
+                        data: $form.serialize()
+                    });
+                });
+            });
+            
+            function sendAuth( request ){
+                return request.setRequestHeader("X-CSRF-Token", '{{ csrf_token }}');
+            }
+        </script>
+    </head>
+    <body>
+
+        {% block page %}
+            <form id="login" class="form" action="/login">
+                <h1>Log in</h1>
+                <div class="item">
+                    <label>User: </label><input type="text" />
+                </div>
+                <div class="item">
+                    <label>password: </label><input type="password" />
+                </div>
+                <input type="submit" />
+            </form>
+        {% endblock %}
+
+    </body>
+</html>

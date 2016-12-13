@@ -3,11 +3,13 @@
     {{ page.add_script('jquery', 'jquery-3.1.0.min.js') }}
     {{ page.add_script('underscore', 'underscore-min.js', {require : 'jquery'}) }}
     {{ page.add_script('bootstrap', 'bootstrap.js', {require : 'jquery'} ) }}
-    {{ page.add_script('bootstrap', 'backbone-min.js', {require : ['jquery', 'underscore']} ) }}
+    {{ page.add_script('bootstrap', 'backbone.js', {require : ['jquery', 'underscore']} ) }}
     {{ page.add_script('rpgtjs', 'rpgt.js', {require : ['jquery', 'underscore']} ) }}
-    {{ page.add_script('sheetjs', 'sheet/init.js', {require : ['rpgtjs', 'jquery', 'underscore']} ) }}
+    {{ page.add_script('autocomplete', 'autocomplete.js', {require : ['jquery', 'rpgtjs']} ) }}
+    {{ page.add_script('initjs', 'sheet/init.js', {require : ['rpgtjs', 'jquery', 'underscore', 'autocomplete']} ) }}
     {{ page.add_style('bootstrap.min.css') }}
     {{ page.add_style('sheet/sheet.css') }}
+    {{ page.add_style('autocomplete.css') }}
     {% for view in views %}
         {% embed view %}
             {# override unwanted view blocks #}
@@ -27,6 +29,7 @@
 {% endblock %}
     
 {% block page %}
+
     
 {% for view in views %}
     {% embed view %}
@@ -35,50 +38,62 @@
     {% endembed %}
 {% endfor %}
     
-    
+<script type="text/javascript">
+    _token = "{{ csrf_token }}";
+</script>
 
-    <script id="sheet_template" type="text/html">
-        <div class="container">
-        <div class="row">
-            <div class="col-md-12"><div class="sheet_header clearfix"></div></div>
+<div id="autocomplete-matches"></div>
+<script id="autocomplete_template" type="text/html">
+    <div class="list">
+        <% _.each(matches, function(match){ %>
+        <div class="list-item" data-autocomplete-value="<%= match.id %>">
+            <%= match.html %>
         </div>
-        <div class="row sheet_row">
-            <div class="col-lg-2 col-sm-2 col-xs-3">
-                <div class="ability_scores clearfix"></div>
+        <% }); %>
+    </div>
+</script>
 
-            </div>
-            <div class="col-md-2 col-sm-3 col-xs-4">
-                <div class="saves clearfix"></div>
-                <div class="skills clearfix"></div>
+<script id="sheet_template" type="text/html">
+    <div class="container">
+    <div class="row">
+        <div class="col-md-12"><div class="sheet_header clearfix"></div></div>
+    </div>
+    <div class="row sheet_row">
+        <div class="col-lg-2 col-sm-2 col-xs-3">
+            <div class="ability_scores clearfix"></div>
 
-            </div>
-            <div class="col-md-2 col-xs-5">
-                <div class="row">
-                    <div class="col-xs-6">
-                        <div class="item_armor clearfix"></div>
-                    </div>
-                    <div class="col-xs-6">
-                        <div class="initiative clearfix"></div>
-                    </div>
+        </div>
+        <div class="col-md-2 col-sm-3 col-xs-4">
+            <div class="saves clearfix"></div>
+            <div class="skills clearfix"></div>
+
+        </div>
+        <div class="col-md-2 col-xs-5">
+            <div class="row">
+                <div class="col-xs-6">
+                    <div class="item_armor clearfix"></div>
                 </div>
-                <div class="hitpoints clearfix"></div>
-                <div class="hitdice clearfix"></div>
-                <div class="death_saves clearfix"></div>
+                <div class="col-xs-6">
+                    <div class="initiative clearfix"></div>
+                </div>
             </div>
-            <div class="col-md-2 col-xs-5">
-                <div class="various1 clearfix"></div>
-                <div class="spellslots clearfix"></div>
-                <div class="feature_actions clearfix"></div>
-            </div>
-            <div class="col-md-2 col-xs-6">
-                <div class="possessions clearfix"></div>
-
-            </div>
+            <div class="hitpoints clearfix"></div>
+            <div class="hitdice clearfix"></div>
+            <div class="death_saves clearfix"></div>
         </div>
+        <div class="col-md-2 col-xs-5">
+            <div class="various1 clearfix"></div>
+            <div class="spellslots clearfix"></div>
+            <div class="feature_actions clearfix"></div>
+        </div>
+        <div class="col-md-2 col-xs-6">
+            <div class="possessions clearfix"></div>
 
         </div>
-    </script>
+    </div>
 
+    </div>
+</script>
     
 {% endblock %}
 

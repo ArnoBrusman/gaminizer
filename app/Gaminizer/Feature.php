@@ -2,16 +2,12 @@
 
 namespace Gaminizer;
 
-use Illuminate\Database\Eloquent\Model;
-
 class Feature extends Model
 {
-    var $table = 'feature';
-    //
     
     function featureable()
     {
-        return $this->morphTo();
+        return $this->morphTo('featureable');
     }
     
 //    function spellsfeature() 
@@ -19,4 +15,24 @@ class Feature extends Model
 //        $relation = $this->hasOne('Gaminizer\SpellsFeature');
 //        return $relation;
 //    }
+    function action()
+    {
+        return $this->morphedByMany('Gaminizer\Action', 'featureable');
+    }
+    
+    function spellcasting()
+    {
+        return $this->morphedByMany('Gaminizer\Spellcasting', 'featureable');
+    }
+    
+    function proficiencies()
+    {
+        return $this->morphedByMany('Gaminizer\Proficiency', 'featureable');
+    }
+    
+    function statModifiers()
+    {
+        return $this->morphedByMany('Gaminizer\StatModifier', 'featureable');
+    }
+    
 }

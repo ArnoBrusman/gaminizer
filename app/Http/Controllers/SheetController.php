@@ -3,9 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Gaminizer\Character;
-use Gaminizer\SheetPage;
-use Template;
 
 class SheetController extends Controller {
   

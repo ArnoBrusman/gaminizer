@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="9">
+        <file>
+            <url>public/js/rpgt.js</url>
+            <bookmark id="6">
+                <name/>
+                <line>43</line>
+                <key/>
+            </bookmark>
+            <bookmark id="7">
+                <name/>
+                <line>141</line>
+                <key/>
+            </bookmark>
+            <bookmark id="1">
+                <name/>
+                <line>407</line>
+                <key/>
+            </bookmark>
+            <bookmark id="5">
+                <name/>
+                <line>542</line>
+                <key/>
+            </bookmark>
+            <bookmark id="4">
+                <name/>
+                <line>641</line>
+                <key/>
+            </bookmark>
+            <bookmark id="9">
+                <name/>
+                <line>726</line>
+                <key/>
+            </bookmark>
+            <bookmark id="8">
+                <name/>
+                <line>744</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/D:/xampp/htdocs/gaminizer/public/js/admin/admin.js</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/app/Http/Controllers/RestApi/CharactersController.php</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/resources/views/layouts/sidebar.twig</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/public/js/lightblue/ui-notifications.js</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/app/Http/Controllers/RestApi/NarrativesController.php</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/routes/web.php</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/public/js/lightblue/app.js</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/public/js/autocomplete.js</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/resources/views/admin/narratives.twig</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/resources/views/base.twig</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/resources/views/admin/index.twig</file>
+            <file>file:/D:/xampp/htdocs/gaminizer/public/js/rpgt.js</file>
+        </group>
+    </open-files>
+</project-private>

@@ -1,9 +1,9 @@
 
 var noop = function noop() {};
 rpgt = {
-	collections: {},
-	models: {},
-	views: {}
+    collections: {},
+    models: {},
+    views: {}
 }
 
 // *************************************
@@ -32,72 +32,69 @@ rpgt.apiUrl = "/restapi/";
 
 Backbone.Model.setGettersSetters = function () {
 
-	var _get = this.prototype.get,
-		_set = this.prototype.set
+    var _get = this.prototype.get,
+            _set = this.prototype.set
 
-	_.extend(this.prototype, {
-	
-		get: function(attr) {
-			// Call the getter if available
-			// *** NEW: if no getter, see if a computed value calculator is present 
-			// ( which we consider a function on the model with same name as requested attribute)
-			
-			if (this.getters && _.isFunction(this.getters[attr])) {
-				return this.getters[attr].call(this, this.attributes[attr]);
-			}
-			//} else if (this[attr] && _.isFunction(this[attr])) {
-			//	return this[attr].call(this)
-			//}
+    _.extend(this.prototype, {
+        get: function (attr) {
+            // Call the getter if available
+            // *** NEW: if no getter, see if a computed value calculator is present 
+            // ( which we consider a function on the model with same name as requested attribute)
 
-			return _get.call(this, attr);
-		},
+            if (this.getters && _.isFunction(this.getters[attr])) {
+                return this.getters[attr].call(this, this.attributes[attr]);
+            }
+            //} else if (this[attr] && _.isFunction(this[attr])) {
+            //	return this[attr].call(this)
+            //}
 
-		set: function(key, value, options) {
-			var attrs, attr;
+            return _get.call(this, attr);
+        },
+        set: function (key, value, options) {
+            var attrs, attr;
 
-			// Normalize the key-value into an object
-			if (_.isObject(key) || key === null) {
-				attrs = key;
-				options = value;
-			} else {
-				attrs = {};
-				attrs[key] = value;
-			}
-						
-			// Go over all the set attributes and call the setter if available
-			// also, trim spaces if a string
+            // Normalize the key-value into an object
+            if (_.isObject(key) || key === null) {
+                attrs = key;
+                options = value;
+            } else {
+                attrs = {};
+                attrs[key] = value;
+            }
 
-			for (attr in attrs) {				
-				if (this.setters && _.isFunction(this.setters[attr])) {					
-					// trim spaces
-					if (typeof attrs[attr] === "string")
-						attrs[attr] = attrs[attr].trim();
-					// run through applicable setter
-					attrs[attr] = this.setters[attr].call(this, attrs[attr]);		
+            // Go over all the set attributes and call the setter if available
+            // also, trim spaces if a string
 
-				}	
-			
-			}
+            for (attr in attrs) {
+                if (this.setters && _.isFunction(this.setters[attr])) {
+                    // trim spaces
+                    if (typeof attrs[attr] === "string")
+                        attrs[attr] = attrs[attr].trim();
+                    // run through applicable setter
+                    attrs[attr] = this.setters[attr].call(this, attrs[attr]);
 
-			return _set.call(this, attrs, options);
-		},
+                }
 
-		// make sure the getters and setters are used when returning model's attributes - if this is desired; 
-		// this method "replaces" Backbone's toJSON();
-		getAttributes: function  () {			
-			var response = _.clone(this.attributes)
-			
-			for (var key in response) {
-				response[key] = this.get(key);
-			}		
+            }
 
-			return response;
+            return _set.call(this, attrs, options);
+        },
+        // make sure the getters and setters are used when returning model's attributes - if this is desired; 
+        // this method "replaces" Backbone's toJSON();
+        getAttributes: function () {
+            var response = _.clone(this.attributes)
 
-		}
+            for (var key in response) {
+                response[key] = this.get(key);
+            }
 
-	})
+            return response;
 
-	return this;
+        }
+
+    })
+
+    return this;
 
 };
 
@@ -112,105 +109,146 @@ Backbone.Model.setGettersSetters = function () {
 // TODO: models in initialize function should be loaded in the collection
 
 rpgt.collections.Pcs = Backbone.Collection.extend({
+    namespace: "pc",
+    url: "restapi/characters",
+    model: rpgt.models.Pc,
+    initialize: function (models, options) {
+    },
+    createAutoCompleteEntries: function () {
+        var entries = []
+        this.each(function (character) {
 
-	namespace: "pc",
-    
-	url: "restapi/characters",
-    
-	initialize: function (models, options) {
-		this.model = rpgt.models.Pc;
-	},
+            var string = "%% " + character.get("name") + " %%";
+            // TODO: class icon 
+            var html = ["<span>", "</span>"]
+            var id = "class/" + character.get("id");
+            entries.push({string: string, html: html, id: id});
+
+        });
+
+        return entries;
+    }
+
 });
 
 rpgt.collections.PcsStats = Backbone.Collection.extend({
-
-	namespace: "stats",
+    namespace: "stats",
     url: "restapi/characters/stats",
-    
-	initialize: function (models, options) {
-		this.model = rpgt.models.PcStats;
-	}
-    
+    model: rpgt.models.PcStats,
+    initialize: function (models, options) {
+    }
+
 });
 
 rpgt.collections.PcsStatsElaborate = Backbone.Collection.extend({
-
-	namespace: "stats_elaborate",
-    
-	initialize: function (models, options) {
-        this.url = "restapi/characters/"+options.pc_id+"/stats?elaborate=true";
-		this.model = rpgt.models.PcStatsElaborate;
-	},
-    
-    get_ability_scores: function() {
-        var ability_scores = this.filter(function(data){
+    namespace: "stats_elaborate",
+    pc_id: '',
+    url: function () {
+        return "restapi/characters/" + this.pc_id + "/stats/elaborate";
+        ;
+    },
+    initialize: function (models, options) {
+        this.pc_id = options.pc_id;
+        this.model = rpgt.models.PcStatsElaborate;
+    },
+    get_ability_scores: function () {
+        var ability_scores = this.filter(function (data) {
             return RegExp(/^AS_/).test(data.get('type'));
         });
         return ability_scores;
     }
-    
+
 });
 
 rpgt.collections.Classes = Backbone.Collection.extend({
+    namespace: "classes",
+    url: "restapi/classes",
+    comparator: 'name',
+    initialize: function (models, options) {
+        this.model = rpgt.models.Class;
 
-	namespace: "classes",
-	url: "restapi/classes",
-    
-	initialize: function (models, options) {
-		this.model = rpgt.models.Class;
-        
-	},
-    
-	createAutoCompleteEntries: function () {
-		var entries = []
-		this.each(function (ch_class) {
+    },
+    createAutoCompleteEntries: function () {
+        var entries = []
+        this.each(function (ch_class) {
 
-			var string = "%% " + ch_class.get("name") + " %%";
+            var string = "%% " + ch_class.get("name") + " %%";
             // TODO: class icon 
-			var html = ["<span>",  "</span>"]
-			var id = "class/" + ch_class.get( "id" );
-			entries.push({ string: string, html: html, id: id});
+            var html = ["<span>", "</span>"]
+            var id = "class/" + ch_class.get("id");
+            entries.push({string: string, html: html, id: id});
 
-		})
-		
-		return entries;
-	}
+        })
+
+        return entries;
+    }
 });
 
 rpgt.collections.Features = Backbone.Collection.extend({
+    namespace: "features",
+    url: "restapi/features",
+    initialize: function (models, options) {
+        this.model = rpgt.models.Feature;
 
-	namespace: "features",
-	url: "restapi/features",
-    
-	initialize: function (models, options) {
-		this.model = rpgt.models.Feature;
-        
-	},
-    
+    },
 });
 
 rpgt.collections.SpellsFeatures = Backbone.Collection.extend({
+    namespace: "features",
+    initialize: function (models, options) {
+        this.model = rpgt.models.SpellsFeature;
+    }
 
-	namespace: "features",
-	url: "restapi/features/spellsfeatures",
-    
-	initialize: function (models, options) {
-		this.model = rpgt.models.SpellsFeature;
-        
-	},
-    
 });
 
 rpgt.collections.Races = Backbone.Collection.extend({
+    namespace: "races",
+    url: "restapi/races",
+    comparator: 'name',
+    initialize: function (models, options) {
+        this.model = rpgt.models.Race;
 
-	namespace: "races",
-	url: "restapi/races",
+    },
     
-	initialize: function (models, options) {
-		this.model = rpgt.models.Race;
-        
-	},
-    
+    createAutoCompleteEntries: function () {
+        var entries = []
+        this.each(function (race) {
+
+            var string = "%% " + race.get("name") + " %%";
+            // TODO: class icon 
+            var html = ["<span>", "</span>"]
+            var id = "race/" + race.get("id");
+            entries.push({string: string, html: html, id: id});
+
+        })
+
+        return entries;
+    }
+});
+
+rpgt.collections.Narratives = Backbone.Collection.extend({
+    namespace: "narratives",
+    url: "restapi/narratives",
+    comparator: 'name',
+    initialize: function (models, options) {
+        this.model = rpgt.models.Narrative;
+
+    },
+    createAutoCompleteEntries: function () {
+        var entries = []
+        this.each(function (narrative) {
+
+            var string = "%% " + narrative.get("name") + " %%";
+            // TODO: class icon 
+            var html = ["<span>", "</span>"]
+            var id = "narrative/" + narrative.get("id");
+            entries.push({string: string, html: html, id: id});
+
+        })
+
+        return entries;
+    }
+
 });
 
 // *************************************
@@ -219,112 +257,96 @@ rpgt.collections.Races = Backbone.Collection.extend({
 //
 // *************************************
 rpgt.models.Pc = Backbone.Model.extend({
-    
-	namespace: "pc",
+    namespace: "pc",
     idAttribute: 'id',
     statsElaborate: {},
     stats: {},
-    
-	url: function(){
+    url: function () {
         return 'restapi/characters/' + this.get('id');
     },
-    
-    initialize: function(attributes, options) {
+    initialize: function (attributes, options) {
         this.statsElaborate = options.statsElaborate || throw_error('Pcs need elaborate stats');
         this.stats = options.stats || throw_error('Pcs need stats');
     },
-    
     getters: {
-        
-        pc : rpgt.models.Pc,
-        
+        pc: rpgt.models.Pc,
         /**
          * get the Pc's PcStats model
          * @returns {unresolved}
          */
-        stats: function() {
+        stats: function () {
             return rpgt.PcStats;
         },
-        
         /**
          * get the Pc's PcStatsElaborate model
          * @returns {unresolved}
          */
-        stats_elaborate: function() {
+        stats_elaborate: function () {
             return this.statsElaborate.get(this.get('id'));
         },
-        
-        ability_scores: function() {
+        ability_scores: function () {
             var stats = this.get('stats');
-            return stats.get('ability_scores') ;
+            return stats.get('ability_scores');
         },
-        
         /**
          * Get initial ability scores. The ability score gotten on Character Creation. 
          */
-        ability_scores_elaborate: function() {
+        abilityScoresElaborate: function () {
             return this.statsElaborate.get_ability_scores();
         },
-        
-        classes: function() {
+        classes: function () {
             var classes = [], pc_classes = this.get('pc_classes');
-            
-            _.each(pc_classes, function(pcc_atr){
-                var pc_class = rpgt.Classes.get(pcc_atr.class_id).attributes;
+
+            _.each(pc_classes, function (pcc_atr) {
+                var pc_class = rpgt.Classes.get(pcc_atr.class_id);
                 pc_class.level = pcc_atr.level;
                 pc_class.origin = pcc_atr.origin;
                 classes.push(pc_class);
             });
-            
+
             return classes;
         },
-        
-        level: function() {
+        level: function () {
             var classes = this.get('classes');
             var level = 0;
-            _.each(classes, function(value) {
+            _.each(classes, function (value) {
                 level += value.level;
             });
-            
+
             return level;
         },
-        
-        proficiency_bonus: function() {
+        proficiency_bonus: function () {
             var level = this.get('level');
             var proficiency_bonus = Math.round(level / 4) + 1;
             return proficiency_bonus;
         },
-        
-        insipration: function() {
+        insipration: function () {
             var stats = this.get('stats');
             return stats.get('insipration');
         },
-        
-        exhaustion: function() {
+        exhaustion: function () {
             var stats = this.get('stats');
             return stats.get('exhaustion');
         },
-        
-        features: function() {
+        features: function () {
             var features = [], pc_features = this.get('pc_features');
-            
-            _.each(pc_features, function(pcf_atr){
+
+            _.each(pc_features, function (pcf_atr) {
                 var pc_feature = rpgt.Features.get(pcf_atr.feature_id).attributes;
                 pc_feature.origin = pcf_atr.origin;
                 pc_feature.used = pcf_atr.used;
                 features.push(pc_feature);
             });
-            
+
             return features;
         },
-        
-        spellsfeatures: function() {
+        spellsfeatures: function () {
             var spellsfeatures = [];
             var features = this.get('features');
-            
-            _.each(features, function(feature){
-                if(feature.type === 'SPL') {
-                    var pc_spellfeature = rpgt.SpellsFeatures.where({feature_id : feature.id})[0].attributes;
+
+            _.each(features, function (feature) {
+                if (feature.type === 'SPL') {
+                    var pc_spellfeature = rpgt.SpellsFeatures.where({feature_id: feature.id})[0].attributes;
                     pc_spellfeature.origin = feature.origin;
                     pc_spellfeature.used = feature.used;
                     spellsfeatures.push(pc_spellfeature);
@@ -332,442 +354,388 @@ rpgt.models.Pc = Backbone.Model.extend({
             });
             return spellsfeatures;
         },
-        
-        sight: function() {
+        sight: function () {
             var features = this.get('features');
-            var result = _.filter(features, function(feature){
-                return feature.type.substring(0,3).match(/VSN/);
+            var result = _.filter(features, function (feature) {
+                return feature.type.substring(0, 3).match(/VSN/);
             });
-            
+
             return result;
         },
-        
-        languages: function() {
+        languages: function () {
             var features = this.get('features');
-            var result = _.filter(features, function(feature){
-                return feature.type.substring(0,3).match(/LNG/);
+            var result = _.filter(features, function (feature) {
+                return feature.type.substring(0, 3).match(/LNG/);
             });
-            
+
             return result;
         },
-        
-        speed: function() {
+        speed: function () {
             var stats = this.get('stats');
             var speeds = stats.get('speed');
-            
+
             return speeds;
         },
-        
-        race: function() {
+        race: function () {
             return rpgt.Races.get(this.get('race_id'));
         },
-        
-        saves: function() {
+        saves: function () {
             var stats = this.get('stats');
             var speeds = stats.get('saves');
-            
+
             return speeds;
         },
-        
-        skills: function() {
+        skills: function () {
             var stats = this.get('stats');
             return stats.get('skills');
         },
-        
-        armor_class: function() {
+        armor_class: function () {
             var stats = this.get('stats');
             return stats.get('armor_class');
         },
-        
-        initiative: function() {
+        initiative: function () {
             var stats = this.get('stats');
             return stats.get('initiative');
         },
-        
-        hitpoints: function() {
+        hitpoints: function () {
             var stats = this.get('stats');
             return stats.get('hitpoints');
         },
-        
-        hitdice: function() {
+        hitdice: function () {
             var stats = this.get('stats');
             return stats.get('hitdice');
         },
-        
-        spellslots: function() {
+        spellslots: function () {
             var spellfeatures = this.get('spellsfeatures');
-            var result = _.filter(spellfeatures, function(feature){
-                return feature.type.substring(0,4).match(/SPSL/);
+            var result = _.filter(spellfeatures, function (feature) {
+                return feature.type.substring(0, 4).match(/SPSL/);
             });
             return result;
         },
-        
     },
-    
     setters: {
-        
-        ability_scores_elaborate: function(ability_scores) {
-            window.console.log(this.get('ability_scores_elaborate'));
-            window.console.log(ability_scores);
+        abilityScoresElaborate: function (abilityScores) {
             var char_stats = this.statsElaborate.get(this.get('id'));
-//            window.console.log(char_stats);
-            return char_stats.set(ability_scores);
+            return char_stats.set(abilityScores);
         },
-        
-        set_stats_elaborate: function(stats) {
+        statsElaborate: function (stats) {
             var char_stats = this.statsElaborate.get(this.get('id'));
             return char_stats.set(stats);
+        },
+        /**
+         * set the given characterclass model as the class of the player
+         */
+        class: function (cClass) {
+            //
         }
-        
+
     }
 
 }).setGettersSetters();
 
 rpgt.models.PcStats = Backbone.Model.extend({
-    
-	namespace: "stats",
+    namespace: "stats",
     pc: null,
-    
-	url: function () {
-		return "restapi/pcstats/" + this.get('id');
-	},
-    
+//    initialize: function(attributes, options) {
+//        
+//    },
+
+    url: function () {
+        return "restapi/pcstats/" + this.get('id');
+    },
     getters: {
-        ability_scores: function() {
-            window.console.log('pc stats AS');
+        ability_scores: function () {
             var ability_scores = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,2).match(/AS/)) {
-                   ability_scores[type.substring(3)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 2).match(/AS/)) {
+                    ability_scores[type.substring(3)] = attribute;
                 }
             });
             return ability_scores;
         },
-        
-        speed: function() {
+        speed: function () {
             var speeds = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/SPD/)) {
-                   speeds[type.substring(4)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/SPD/)) {
+                    speeds[type.substring(4)] = attribute;
                 }
             });
             return speeds;
         },
-        
-        saves: function() {
+        saves: function () {
             var saves = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/SAV/)) {
-                   saves[type.substring(4)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/SAV/)) {
+                    saves[type.substring(4)] = attribute;
                 }
             });
             return saves;
-            
+
         },
-        
-        skills: function() {
+        skills: function () {
             var skills = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,4).match(/CSKL/)) {
-                   skills[type.substring(5)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 4).match(/CSKL/)) {
+                    skills[type.substring(5)] = attribute;
                 }
             });
             return skills;
-            
+
         },
-        
-        ribbon_skills: function() {
+        ribbon_skills: function () {
             var skills = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/RSKL/)) {
-                   skills[type.substring(4)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/RSKL/)) {
+                    skills[type.substring(4)] = attribute;
                 }
             });
             return skills;
-            
+
         },
-        
-        armor_class: function() {
+        armor_class: function () {
             var AC_stats = {}, ac_val;
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,2).match(/AC/)) {
-                   AC_stats[type] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 2).match(/AC/)) {
+                    AC_stats[type] = attribute;
                 }
             });
-            
-            if(_.isEmpty(AC_stats)) {
-              ac_val = 10;
-            } else {
-              if(_.isUndefined(AC_stats.AC_BASE)) {
-                ac_val = AC_stats.AC_BASE;
-              } else {
+
+            if (_.isEmpty(AC_stats)) {
                 ac_val = 10;
-              }
-              ac_val += AC_stats.AC;
+            } else {
+                if (_.isUndefined(AC_stats.AC_BASE)) {
+                    ac_val = AC_stats.AC_BASE;
+                } else {
+                    ac_val = 10;
+                }
+                ac_val += AC_stats.AC;
             }
-            
+
             return ac_val;
-            
+
         },
-        
-        initiative: function() {
+        initiative: function () {
             return this.get('INI') || 10;
         },
-        
         hitpoints: function () {
             var hitpoints = {}, ac_val;
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,2).match(/HP/)) {
-                   hitpoints[type] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 2).match(/HP/)) {
+                    hitpoints[type] = attribute;
                 }
             });
             return hitpoints;
         },
-        
         hitdice: function () {
             var hitdice = {}, ac_val;
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/HTD/)) {
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/HTD/)) {
                     var hd_type = type.substring(4).match(/^\d*/)[0];
                     var used = type.substring(4).match(/USD$/) || ['MAX'];
                     used = used[0];
-                    if (_.isUndefined(hitdice[hd_type])){
+                    if (_.isUndefined(hitdice[hd_type])) {
                         hitdice[hd_type] = {};
-                    };
+                    }
+                    ;
                     hitdice[hd_type][used] = attribute;
                 }
             });
             return hitdice;
         },
-        
-        insipration: function() {
+        insipration: function () {
             return this.get('INSPN') || 0;
         },
-        
-        exhaustion: function() {
+        exhaustion: function () {
             return this.get('EXH') || 0;
         },
-        
     }
-    
+
     // Since the model is filled with server calculated data, there are no setters.
     // TODO: find the efficient way to listen to the server for changes. Sockets?
 
 }).setGettersSetters();
 
 rpgt.models.PcStatsElaborate = Backbone.Model.extend({
-    
-	namespace: "stats_elaborate",
+    namespace: "stats_elaborate",
     pc: null,
-    
-	url: function () {
-		return "restapi/pcstats/" + this.get('id');
-	},
-    
+    url: function () {
+        return "restapi/pcstats/" + this.get('id');
+    },
     getters: {
-        
-        speed: function() {
+        speed: function () {
             var speeds = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/SPD/)) {
-                   speeds[type.substring(4)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/SPD/)) {
+                    speeds[type.substring(4)] = attribute;
                 }
             });
             return speeds;
         },
-        
-        saves: function() {
+        saves: function () {
             var saves = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/SAV/)) {
-                   saves[type.substring(4)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/SAV/)) {
+                    saves[type.substring(4)] = attribute;
                 }
             });
             return saves;
-            
+
         },
-        
-        skills: function() {
+        skills: function () {
             var skills = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,4).match(/CSKL/)) {
-                   skills[type.substring(5)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 4).match(/CSKL/)) {
+                    skills[type.substring(5)] = attribute;
                 }
             });
             return skills;
-            
+
         },
-        
-        ribbon_skills: function() {
+        ribbon_skills: function () {
             var skills = {};
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/RSKL/)) {
-                   skills[type.substring(4)] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/RSKL/)) {
+                    skills[type.substring(4)] = attribute;
                 }
             });
             return skills;
-            
+
         },
-        
-        armor_class: function() {
+        armor_class: function () {
             var AC_stats = {}, ac_val;
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,2).match(/AC/)) {
-                   AC_stats[type] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 2).match(/AC/)) {
+                    AC_stats[type] = attribute;
                 }
             });
-            
-            if(_.isEmpty(AC_stats)) {
-              ac_val = 10;
-            } else {
-              if(_.isUndefined(AC_stats.AC_BASE)) {
-                ac_val = AC_stats.AC_BASE;
-              } else {
+
+            if (_.isEmpty(AC_stats)) {
                 ac_val = 10;
-              }
-              ac_val += AC_stats.AC;
+            } else {
+                if (_.isUndefined(AC_stats.AC_BASE)) {
+                    ac_val = AC_stats.AC_BASE;
+                } else {
+                    ac_val = 10;
+                }
+                ac_val += AC_stats.AC;
             }
-            
+
             return ac_val;
-            
+
         },
-        
-        initiative: function() {
+        initiative: function () {
             return this.get('INI') || 10;
         },
-        
         hitpoints: function () {
             var hitpoints = {}, ac_val;
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,2).match(/HP/)) {
-                   hitpoints[type] = attribute;
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 2).match(/HP/)) {
+                    hitpoints[type] = attribute;
                 }
             });
             return hitpoints;
         },
-        
         hitdice: function () {
             var hitdice = {}, ac_val;
-            _.each(this.attributes, function(attribute, type) {
-                if(type.substring(0,3).match(/HTD/)) {
+            _.each(this.attributes, function (attribute, type) {
+                if (type.substring(0, 3).match(/HTD/)) {
                     var hd_type = type.substring(4).match(/^\d*/)[0];
                     var used = type.substring(4).match(/USD$/) || ['MAX'];
                     used = used[0];
-                    if (_.isUndefined(hitdice[hd_type])){
+                    if (_.isUndefined(hitdice[hd_type])) {
                         hitdice[hd_type] = {};
-                    };
+                    }
+                    ;
                     hitdice[hd_type][used] = attribute;
                 }
             });
             return hitdice;
         },
-        
-        insipration: function() {
+        insipration: function () {
             return this.get('INSPN') || 0;
         },
-        
-        exhaustion: function() {
+        exhaustion: function () {
             return this.get('EXH') || 0;
         },
-        
     },
-    
     setters: {
-        
-        ability_scores: function(ability_scores) {
+        ability_scores: function (ability_scores) {
 //            window.console.log(ability_scores);
         }
-        
+
     }
 
 }).setGettersSetters();
 
 rpgt.models.PcAbilityScores = Backbone.Model.extend({
-    
-	namespace: "ability_scores",
+    namespace: "ability_scores",
     pc: null,
-    
-	url: function () {
-		return "restapi/characters/" + this.get('id') + "/ability_scores/"
-	},
-    
+    url: function () {
+        return "restapi/characters/" + this.get('id') + "/ability_scores/"
+    },
     getters: {
-        ability_scores: function() {
-            
+        ability_scores: function () {
+
         }
     }
 
 }).setGettersSetters();
 
 rpgt.models.Class = Backbone.Model.extend({
-    
-	namespace: "model",
-    
-	url: function() {
+    namespace: "model",
+    url: function () {
         return 'restapi/classes/' + this.get('id');
     },
-    
     getters: {
-        
     }
 
 }).setGettersSetters();
 
 rpgt.models.Feature = Backbone.Model.extend({
-    
-	namespace: "features",
-    
-	url: function(){
+    namespace: "features",
+    url: function () {
         return 'restapi/features/' + this.get('id');
     },
-    
     getters: {
-        
     }
 
 }).setGettersSetters();
 
 rpgt.models.SpellsFeature = Backbone.Model.extend({
-    
-	namespace: "features",
-    
-	url: function(){
+    namespace: "features",
+    url: function () {
         return 'restapi/features/spellsfeatures/' + this.get('id');
     },
-    
     getters: {
-        
-        spellslots: function() {
-            
-        },
+        spellslots: function () {
 
+        },
     }
 
 }).setGettersSetters();
 
 rpgt.models.Race = Backbone.Model.extend({
-    
-	namespace: "races",
-    
-	url: function(){
+    namespace: "races",
+    url: function () {
         return 'restapi/races/' + this.get('id');
     },
-    
+    getters: {
+    }
+
+}).setGettersSetters();
+
+rpgt.models.Narrative = Backbone.Model.extend({
+    namespace: "narratives",
+//    url: 'restapi/narratives',
+//    url: function () {
+//        return 'restapi/narratives/' + this.get('id');
+//    },
+    urlRoot: "/restapi/narratives",
     getters: {
         
     }
 
 }).setGettersSetters();
-
-rpgt.models.HRStats = Backbone.Model.extend({
-    
-	namespace: "stats",
-    
-	url: function(){
-        return 'restapi/characters/hr_stats';
-    },
-
-});
 
 // helper functions
 
@@ -781,62 +749,76 @@ rpgt.models.HRStats = Backbone.Model.extend({
 
 // ---- resource loading 
 // TODO: pretty loading bar
-rpgt.createGlobalResources = function() {
+rpgt.createGlobalResources = function (char_id) {
     //TODO: get data from url or login data
-    
-    var char_id = 1;
-	rpgt.PcStats = new rpgt.models.PcStats({id: char_id});    
-	rpgt.PcsStatsElaborate = new rpgt.collections.PcsStatsElaborate({},{pc_id: char_id});    
-    rpgt.currentPC = new rpgt.models.Pc({id: char_id},{
-        stats: rpgt.PcStats, 
-        statsElaborate: rpgt.PcsStatsElaborate
-    });
-    
-	rpgt.pcs = new rpgt.collections.Pcs();
-	rpgt.Classes = new rpgt.collections.Classes();    
-	rpgt.Features = new rpgt.collections.Features();    
-	rpgt.SpellsFeatures = new rpgt.collections.SpellsFeatures();    
-	rpgt.Races = new rpgt.collections.Races();
-    rpgt.HRStats = new rpgt.models.HRStats();
-    
+    if (char_id !== undefined) {
+        rpgt.PcStats = new rpgt.models.PcStats({id: char_id});
+        rpgt.PcsStatsElaborate = new rpgt.collections.PcsStatsElaborate({}, {pc_id: char_id});
+        rpgt.PcFeatures = new rpgt.collections.Features({pc_id: char_id});
+        rpgt.currentPC = new rpgt.models.Pc({id: char_id}, {
+            stats: rpgt.PcStats,
+            statsElaborate: rpgt.PcsStatsElaborate,
+            features: rpgt.PcFeatures
+        });
+    }
+
+    rpgt.pcs = new rpgt.collections.Pcs();
+    rpgt.Classes = new rpgt.collections.Classes();
+    rpgt.SpellsFeatures = new rpgt.collections.SpellsFeatures();
+    rpgt.Races = new rpgt.collections.Races();
+    rpgt.Narratives = new rpgt.collections.Narratives();
 };
 
-rpgt.fetchResources = function(options) {
-    rpgt.totalResources = 8;	
-	rpgt.resourcesFetched = 0;
-	rpgt.isFetchingResources = true;
-    
+rpgt.fetchResources = function (fetchers, options) {
+    rpgt.totalResources = fetchers.length;
+    rpgt.resourcesFetched = 0;
+    rpgt.isFetchingResources = true;
+
+
+    _.each(fetchers, function (fetcher, key) {
+        fetcher.fetch({success: function () {
+                rpgt.onFetchSuccess(fetcher.namespace + ' fetched', options);
+            }});
+    });
+
     // current PC specific collections
     // TODO: now the pc specific stats will be tied to current pc, need to find
     // a way to make it work with a dynamic ammount of players
-    //
-    rpgt.currentPC.fetch({ success: function () {  rpgt.onFetchSuccess("current character", options); } });
-    rpgt.PcStats.fetch({ success: function () {  rpgt.onFetchSuccess("character stats", options); } });
-    rpgt.PcsStatsElaborate.fetch({ success: function () {  rpgt.onFetchSuccess("character stats (elaborate)", options); } });
-    
-//    rpgt.pcs.fetch({ success: function () {  rpgt.onFetchSuccess("characters", options); } });
-    
-    rpgt.HRStats.fetch({ success: function () {  rpgt.onFetchSuccess("human readable stats", options); } });
-    rpgt.Classes.fetch({ success: function () {  rpgt.onFetchSuccess("classes", options); } });
-    rpgt.Features.fetch({ success: function () {  rpgt.onFetchSuccess("features", options); } });
-    rpgt.SpellsFeatures.fetch({ success: function () {  rpgt.onFetchSuccess("spellsfeatures", options); } });
-    rpgt.Races.fetch({ success: function () {  rpgt.onFetchSuccess("races", options); } });
-    
+    if (rpgt.currentPC !== undefined) {
+        rpgt.totalResources += 5;
+        rpgt.isFetchingResources = true;
+        rpgt.currentPC.fetch({success: function () {
+                rpgt.onFetchSuccess("current character", options);
+            }});
+        rpgt.PcStats.fetch({success: function () {
+                rpgt.onFetchSuccess("character stats", options);
+            }});
+        rpgt.PcsStatsElaborate.fetch({success: function () {
+                rpgt.onFetchSuccess("character stats (elaborate)", options);
+            }});
+        rpgt.PcFeatures.fetch({success: function () {
+                rpgt.onFetchSuccess("features", options);
+            }});
+        rpgt.SpellsFeatures.fetch({success: function () {
+                rpgt.onFetchSuccess("spellsfeatures", options);
+            }});
+    }
+
 }
 
-rpgt.onFetchSuccess = function ( resource, options ) {
+rpgt.onFetchSuccess = function (resource, options) {
 
-	rpgt.resourcesFetched++;
+    rpgt.resourcesFetched++;
 
-	if (rpgt.resourcesFetched === rpgt.totalResources && rpgt.isFetchingResources) {
+    if (rpgt.resourcesFetched === rpgt.totalResources && rpgt.isFetchingResources) {
 
         // we're done loading;
         rpgt.isFetchingResources = false;
         // callback;
-        if (options.success) {
+        if (_.isFunction(options.success)) {
             options.success();
         }
-	}
+    }
 };
 
 
@@ -848,12 +830,12 @@ function throw_error(message) {
 
 
 function get_hr_type(type) {
-    return rpgt.HRStats.get(type);
+    return hrStats[type];
 }
 
 
 function calc_ability_mod(ability_score) {
-    return -5 + Math.floor(ability_score/2);
+    return -5 + Math.floor(ability_score / 2);
 }
 
 
@@ -863,24 +845,29 @@ function calc_ability_mod(ability_score) {
  * @param type $int
  */
 function nth(int/*, $loud = false*/) {
-  var nth = '';
-  nth += int;
-  var last_digit = nth.substring(nth.length - 1); 
-  switch (last_digit) {
-    case '1':
-      nth += 'st';
-      break;
-    case '2':
-      nth += 'nd';
-      break;
-    case '3':
-      nth += 'rd';
-      break;
-    default:
-      nth += 'nth';
-      break;
-  }
-  
-  return nth;
+    var nth = '';
+    nth += int;
+    var last_digit = nth.substring(nth.length - 1);
+    switch (last_digit) {
+        case '1':
+            nth += 'st';
+            break;
+        case '2':
+            nth += 'nd';
+            break;
+        case '3':
+            nth += 'rd';
+            break;
+        default:
+            nth += 'nth';
+            break;
+    }
+
+    return nth;
 }
 
+function sendAuth(request) {
+    return request.setRequestHeader("X-CSRF-Token", _token);
+}
+
+$(document).ajaxSend(function(event, request) { sendAuth(request); });

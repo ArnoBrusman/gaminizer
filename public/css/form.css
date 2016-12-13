@@ -1,0 +1,13 @@
+/* 
+    Created on : Aug 30, 2016, 5:10:05 PM
+    Author     : Arno
+*/
+
+
+.form .item {
+    margin-bottom: 6px;
+}
+.form .item label {
+    display: inline-block;
+    width: 100px;
+}

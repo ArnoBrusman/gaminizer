@@ -2,10 +2,16 @@
 //define view
 rpgt.views.SheetHeaderView = Backbone.View.extend({
 
+    events: {
+        'change #character' : 'changeName',
+        'change .header_item' : 'autoCompleteHandler'
+    },
+
     pc: null,
     items: [],
 
-    initialize: function(options) {
+    initialize: function(options) 
+    {
 		options = options || {};
         
         //set active PC
@@ -20,11 +26,11 @@ rpgt.views.SheetHeaderView = Backbone.View.extend({
 //        this.template = _.template($('#sheetheader_template').html());
         this.item_template = _.template($('#sheetheader_item').html());
 
-        this.add_default_values();
         return this;
     },
     
-    add_item: function(name, value, options) {
+    add_item: function(name, value, options) 
+    {
         var attributes = '', label, item;
         options = options || {};
         if(!_.isUndefined(options.label)) {
@@ -37,26 +43,29 @@ rpgt.views.SheetHeaderView = Backbone.View.extend({
           attributes += 'readonly ';
         }
         
-        item = this.item_template({
+        item = $(this.item_template({
             name: name,
             value: value,
             attributes: attributes,
             label: label
-        });
+        }));
         
         this.items.push(item);
+        
+        return item;
     },
     
-    render: function () {
-//        var html = this.template();
-        
-        var html = this.items;
-        
-        this.$el.html(html);
+    render: function () 
+    {
+        var self = this.$el;
+        _.each(this.items, function(item){
+            self.append(item);
+        });
         return this;
     },
     
-    add_default_values: function() {
+    add_default_values: function() 
+    {
     
         var pc_name, pc_classes, pc_experience, pc_sight, pc_features, pc_race, pc_languages, pc_speed;
         pc_name = this.pc.get('name');
@@ -108,6 +117,17 @@ rpgt.views.SheetHeaderView = Backbone.View.extend({
         }
         
         this.add_item('speed', speed_str);
+    },
+    
+    // Event functions
+    
+    changeName: function(event)
+    {
+        
+        var newName = event.currentTarget.value;
+        
+        this.pc.save({name: newName},{beforeSend: sendAuth});
+        
     }
     
 });

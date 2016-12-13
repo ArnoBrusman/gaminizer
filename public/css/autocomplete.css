@@ -1,0 +1,68 @@
+/* 
+    Created on : Aug 11, 2016, 6:29:01 PM
+    Author     : Brusman
+*/
+
+
+#autocomplete-matches {
+    background: rgba(12, 44, 62, 0.84) none repeat scroll 0 0;
+    border-radius: 5px;
+    z-index: 9001;
+}
+#autocomplete-matches span.match {
+    background-color: #ffffa0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    color: #333;
+    font-weight: bold;
+}
+#autocomplete-matches .list {
+    box-shadow: 0 4px 16px rgba(12, 44, 62, 0.6);
+    margin-bottom: 0;
+    overflow: auto;
+    max-height: 320px;
+}
+#autocomplete-matches .list-item {
+    cursor: pointer;
+    padding: 10px 15px;
+}
+#autocomplete-matches .list-item span.entype {
+    margin-right: 10px;
+}
+#autocomplete-matches .list-item:first-child {
+    border-radius: 5px 5px 0 0;
+}
+#autocomplete-matches .list-item:last-child {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+#autocomplete-matches .list-item.selected {
+    background: rgba(50, 56, 50, 1) none repeat scroll 0 0;
+}
+#autocomplete-matches .list-item.placeholder {
+    color: #ccc;
+    cursor: default;
+    font-size: 20px;
+    padding: 0 20px;
+}
+
+/* jscrollbar */
+#autocomplete-matches .jspHorizontalBar {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0 4px 4px 0;
+    overflow: hidden;
+    height: 4px;
+}
+#autocomplete-matches .jspVerticalBar {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0 4px 4px 0;
+    overflow: hidden;
+    width: 4px;
+}
+#autocomplete-matches .jspTrack {
+    background-color: transparent;
+}
+#autocomplete-matches .jspDrag {
+    background-color: rgba(0, 0, 55, 0.4);
+}
+

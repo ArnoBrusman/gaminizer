@@ -23,6 +23,8 @@ rpgt.views.AbilityScoresInitView = Backbone.View.extend({
         }
         this.AS = this._get_ability_scores();
         
+        this.listenTo(this.AS, 'change', this.collectionChanged);
+        
         this.item_template = _.template($('#ability_scores_item_template').html());
         return this;
 
@@ -62,7 +64,7 @@ rpgt.views.AbilityScoresInitView = Backbone.View.extend({
      * @returns {rpgt.collections.PcsStatsElaborate}
      */
     _get_ability_scores: function () {
-        var elaborate = this.pc.get('ability_scores_elaborate');
+        var elaborate = this.pc.get('abilityScoresElaborate');
         
         var cc_scores = _.filter(elaborate, function(ability){
             var acquired_type = JSON.parse(ability.get('acquired')).acquired;
@@ -79,9 +81,12 @@ rpgt.views.AbilityScoresInitView = Backbone.View.extend({
 //-----------------------------------------------------
     changeAction: function(event)
     {
-//        this.pc.set('')
+        var score = event.currentTarget.value,
+                modelId = event.currentTarget.getAttribute('data-id'),
+                model = this.AS.get(modelId);
         
-        this.sync_scores();
+        model.save({value: score},{beforeSend: sendAuth});
+        
     },
     
     /**
@@ -102,6 +107,13 @@ rpgt.views.AbilityScoresInitView = Backbone.View.extend({
                 .set(this.$el.find('#wisdom_score').val());
         this.AS.get(this.$el.find('#charisma_score').attr('data-id'))
                 .set(this.$el.find('#charisma_score').val());
+        
+        
+    },
+
+    collectionChanged : function()
+    {
+        window.console.log('collection has changed');
     }
 
 });
