@@ -49,7 +49,7 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
-            'prefix' => 'gaminizer_',
+            'prefix' => '',
         ],
 
         'mysql' => [
@@ -61,7 +61,7 @@ return [
             'password' => env('DB_PASSWORD', 'creative'),
             'charset' => 'utf8',
             'collation' => 'utf8_unicode_ci',
-            'prefix' => 'gaminizer_',
+            'prefix' => '',
             'strict' => false,
             'engine' => null,
         ],

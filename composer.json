@@ -5,25 +5,32 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": ">=5.6.4",
-        "laravel/framework": "5.3.*",
+        "php": ">=5.7",
+        "guzzlehttp/guzzle": "^6.2",
+        "laravel/framework": "5.4.*",
         "rcrowe/twigbridge": "^0.9.2",
-        "barryvdh/laravel-debugbar": "^2.2",
-        "predis/predis": "^1.1"
+        "predis/predis": "^1.1",
+        "sofa/eloquence": "~5.4",
+        "qintuap/repositories": "dev-dev as 1.1.x-dev"
     },
     "require-dev": {
+        "laravel/browser-kit-testing": "^2.0",
         "fzaninotto/faker": "~1.4",
         "mockery/mockery": "0.9.*",
         "phpunit/phpunit": "~5.0",
         "symfony/css-selector": "3.1.*",
         "symfony/dom-crawler": "3.1.*",
-        "ytake/laravel-smarty": "~2.0"
+        "barryvdh/laravel-debugbar": "^2.2",
+        "barryvdh/laravel-ide-helper": "^2.2",
+        "ytake/laravel-smarty": "~2.0",
+        "rap2hpoutre/laravel-log-viewer": "^0.10.0"
     },
     "autoload": {
         "classmap": [
             "database"
         ],
         "psr-4": {
+            "Tests\\": "tests/",
             "App\\": "app/",
             "Gaminizer\\": "app/Gaminizer",
             "Gaminizer\\ViewComposers\\": "app/Http/ViewComposers"
@@ -36,21 +43,38 @@
     },
     "scripts": {
         "post-root-package-install": [
-            "D:/xampp/php/php -r \"copy('.env.example', '.env');\""
+            "php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ],
         "post-create-project-cmd": [
-            "D:/xampp/php/php artisan key:generate"
+            "php artisan key:generate"
         ],
         "post-install-cmd": [
             "Illuminate\\Foundation\\ComposerScripts::postInstall",
-            "D:/xampp/php/php artisan optimize"
+            "php artisan optimize"
         ],
         "post-update-cmd": [
             "Illuminate\\Foundation\\ComposerScripts::postUpdate",
-            "D:/xampp/php/php artisan optimize"
+            "php artisan ide-helper:meta",
+            "php artisan optimize"
         ]
     },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git@github.com:/ArnoBrusman/qintuap-repositories.git"
+        },
+        {
+            "type": "git",
+            "url": "git@github.com:/ArnoBrusman/qintuap-scopes.git"
+        },
+        {
+            "type": "git",
+            "url": "git@github.com:/ArnoBrusman/qintuap-cachedecorators.git"
+        }
+    ],
     "config": {
-        "preferred-install": "dist"
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
     }
 }

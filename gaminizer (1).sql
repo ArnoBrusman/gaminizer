@@ -23,10 +23,10 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_ability_scores`
+-- Table structure for table `ability_scores`
 --
 
-CREATE TABLE `gaminizer_ability_scores` (
+CREATE TABLE `ability_scores` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   `description` mediumtext
@@ -35,10 +35,10 @@ CREATE TABLE `gaminizer_ability_scores` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_actions`
+-- Table structure for table `actions`
 --
 
-CREATE TABLE `gaminizer_actions` (
+CREATE TABLE `actions` (
   `id` int(11) UNSIGNED NOT NULL,
   `actionable_id` int(11) NOT NULL,
   `actionable_type` int(11) NOT NULL,
@@ -49,10 +49,10 @@ CREATE TABLE `gaminizer_actions` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_classes`
+-- Table structure for table `classes`
 --
 
-CREATE TABLE `gaminizer_classes` (
+CREATE TABLE `classes` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) DEFAULT NULL,
   `description` mediumtext NOT NULL,
@@ -65,10 +65,10 @@ CREATE TABLE `gaminizer_classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_classes`
+-- Dumping data for table `classes`
 --
 
-INSERT INTO `gaminizer_classes` (`id`, `name`, `description`, `description_short`, `hit_die`, `caster_type`, `spell_ability`, `parent_id`, `type`) VALUES
+INSERT INTO `classes` (`id`, `name`, `description`, `description_short`, `hit_die`, `caster_type`, `spell_ability`, `parent_id`, `type`) VALUES
 (1, 'Paladin', '', 'A holy warrior bound to a sacred oath ', '1d10', 'half', 'AS_CHA', 0, 'CORE'),
 (2, 'Mesmer', '', 'An inspiring magician with mastery of illusion and control.', '1d8', 'full', 'AS_CHA', 0, 'CORE'),
 (3, 'Cleric', '', 'A priestly champion who wields divine magic in service of a higher power\n', '1d8', 'full', 'AS_WIS', 0, 'CORE'),
@@ -85,10 +85,10 @@ INSERT INTO `gaminizer_classes` (`id`, `name`, `description`, `description_short
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_class_features`
+-- Table structure for table `class_features`
 --
 
-CREATE TABLE `gaminizer_class_features` (
+CREATE TABLE `class_features` (
   `id` int(11) UNSIGNED NOT NULL,
   `class_id` int(11) DEFAULT NULL,
   `level` int(11) DEFAULT NULL,
@@ -98,10 +98,10 @@ CREATE TABLE `gaminizer_class_features` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_feats`
+-- Table structure for table `feats`
 --
 
-CREATE TABLE `gaminizer_feats` (
+CREATE TABLE `feats` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   `description` varchar(255) DEFAULT NULL,
@@ -111,10 +111,10 @@ CREATE TABLE `gaminizer_feats` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_featureables`
+-- Table structure for table `featureables`
 --
 
-CREATE TABLE `gaminizer_featureables` (
+CREATE TABLE `featureables` (
   `id` int(11) NOT NULL,
   `feature_id` int(11) NOT NULL,
   `featureable_id` int(11) NOT NULL,
@@ -122,20 +122,20 @@ CREATE TABLE `gaminizer_featureables` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `gaminizer_featureables`
+-- Dumping data for table `featureables`
 --
 
-INSERT INTO `gaminizer_featureables` (`id`, `feature_id`, `featureable_id`, `featureable_type`) VALUES
+INSERT INTO `featureables` (`id`, `feature_id`, `featureable_id`, `featureable_type`) VALUES
 (1, 3, 1, 'Gaminizer\\Spellcasting'),
 (2, 4, 2, 'Gaminizer\\Spellcasting');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_features`
+-- Table structure for table `features`
 --
 
-CREATE TABLE `gaminizer_features` (
+CREATE TABLE `features` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) DEFAULT NULL,
   `type` varchar(45) DEFAULT NULL,
@@ -143,10 +143,10 @@ CREATE TABLE `gaminizer_features` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_features`
+-- Dumping data for table `features`
 --
 
-INSERT INTO `gaminizer_features` (`id`, `name`, `type`, `description`) VALUES
+INSERT INTO `features` (`id`, `name`, `type`, `description`) VALUES
 (1, 'Common', 'LNG', ''),
 (2, 'Dwarven', 'LNG', ''),
 (3, 'paladin lvl1 spells', 'SPL', 'paladin got mad splzz'),
@@ -160,10 +160,10 @@ INSERT INTO `gaminizer_features` (`id`, `name`, `type`, `description`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_feat_features`
+-- Table structure for table `feat_features`
 --
 
-CREATE TABLE `gaminizer_feat_features` (
+CREATE TABLE `feat_features` (
   `id` int(11) UNSIGNED NOT NULL,
   `feat_id` int(11) DEFAULT NULL,
   `feature_id` int(11) DEFAULT NULL
@@ -172,10 +172,10 @@ CREATE TABLE `gaminizer_feat_features` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_items`
+-- Table structure for table `items`
 --
 
-CREATE TABLE `gaminizer_items` (
+CREATE TABLE `items` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) DEFAULT NULL,
   `type` varchar(45) DEFAULT NULL,
@@ -185,38 +185,38 @@ CREATE TABLE `gaminizer_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_items`
+-- Dumping data for table `items`
 --
 
-INSERT INTO `gaminizer_items` (`id`, `name`, `type`, `weight`, `value`, `description`) VALUES
+INSERT INTO `items` (`id`, `name`, `type`, `weight`, `value`, `description`) VALUES
 (1, 'longsword', 'WPN', 3, 15, 'A sword that is long');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_migrations`
+-- Table structure for table `migrations`
 --
 
-CREATE TABLE `gaminizer_migrations` (
+CREATE TABLE `migrations` (
   `migration` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `batch` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `gaminizer_migrations`
+-- Dumping data for table `migrations`
 --
 
-INSERT INTO `gaminizer_migrations` (`migration`, `batch`) VALUES
+INSERT INTO `migrations` (`migration`, `batch`) VALUES
 ('2014_10_12_000000_create_users_table', 1),
 ('2014_10_12_100000_create_password_resets_table', 1);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_narratives`
+-- Table structure for table `narratives`
 --
 
-CREATE TABLE `gaminizer_narratives` (
+CREATE TABLE `narratives` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) NOT NULL,
   `oddity` int(11) NOT NULL,
@@ -227,10 +227,10 @@ CREATE TABLE `gaminizer_narratives` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_narratives`
+-- Dumping data for table `narratives`
 --
 
-INSERT INTO `gaminizer_narratives` (`id`, `name`, `oddity`, `description`, `description_short`, `parent_id`, `type`) VALUES
+INSERT INTO `narratives` (`id`, `name`, `oddity`, `description`, `description_short`, `parent_id`, `type`) VALUES
 (1, 'Free Blade', 0, '<p>Mercenary, wanderer, outlaw, fortune-hunter, freebooter—\nthe cities of Thule are full of hard-nosed\nadventurers ready to earn a living with a strong\nsword-hand. Monarchs and nobles are always looking\nfor skilled soldiers, merchants need bodyguards, and\nforgotten treasures lie waiting for the audacious explorer\nbold enough to dare deadly jungles and cursed\nruins and claim them. The free blade is a true soldier\nof fortune, a sell-sword who may try out a dozen different\ncareers as he or she searches for that one bold\nstroke that might make a mercenary into a lord . . . or\neven a king.</p>\n<p>Whether you’re a professional mercenary with a\ncareful eye for the odds or a bored barbarian looking\nfor adventure, you keep your sword loose in the\nscabbard and your coinpurse where you can see it.</p>\n<p>You’re ambitious, resourceful, and pragmatic—all\nthe gold in the world is worthless to a dead man.\nAbove all, you are a great believer in the power\nof opportunity. No matter where you are or what\nyou’re doing, you never stop looking for your next\nbig chance. If it involves making enemies or breaking\nlaws, so be it.</p>\n<p>Fighting skill is the stock in trade of the free\nblade—anyone following this path must be handy\nwith weapons and willing to fight for pay. Free\nblades come from almost any culture or background.\nSome are wandering barbarians, some are\ndesperate street thugs trying to get ahead, and a few\nare highborn swordsmen or swordswomen forced by\nfamily circumstances to carve out their own place in\nthe world. Even nonhumans such as dwarven mercenaries\nor elven duelists are found in this opportunistic\ntrade.</p>', 'Freebooter or mercenary', 0, 'CORE'),
 (2, 'Jungle Trader', 0, '<p>Someone’s got to get Imystrahli pearls to Katagia,\nor find a new source of rare iron alloys now that\nKal-Zinan has closed its gates. That someone is\nyou. You’re willing to crisscross the continent, brave\nsavage monsters, and overcome countless obstacles,\nas long as the balance sheet is black at journey’s end.</p>\n<p>Lots of people call themselves “traders” or “merchants” in Thule, but you don’t have much in\ncommon with the farmer bringing his vegetables\ndownriver or the wagoneer selling ceramic pots from\nvillage to village. You favor high-margin cargoes and\ndangerous routes. You’re also comfortable with speculation—you’ll observe a shortage and buy (or otherwise “acquire”) the available supply. Everything from\nspices to silks to alchemical reagents to magic-imbued materials is in your hands just long enough for\nyou to get it to the buyer and collect your profit.</p>\n<p>The narrative is named Jungle Trader, but you’ll\ngo anywhere in search of a profitable gap between\nsupply and demand. That means classes with a predilection for travel (such as rangers, rogues, and bards)\nare suited for the trader’s life. Really, though, if you\nlike money, life as a jungle trader should hold at least\nsome appeal.</p>', 'Resourceful explorer and caravan leader', 0, 'CORE'),
 (17, 'New Narrative', 0, 'test', 'test', 0, 'CORE');
@@ -238,10 +238,10 @@ INSERT INTO `gaminizer_narratives` (`id`, `name`, `oddity`, `description`, `desc
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_narrative_classes`
+-- Table structure for table `narrative_classes`
 --
 
-CREATE TABLE `gaminizer_narrative_classes` (
+CREATE TABLE `narrative_classes` (
   `id` int(11) UNSIGNED NOT NULL,
   `narrative_id` int(11) NOT NULL,
   `class_id` int(11) NOT NULL,
@@ -249,10 +249,10 @@ CREATE TABLE `gaminizer_narrative_classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `gaminizer_narrative_classes`
+-- Dumping data for table `narrative_classes`
 --
 
-INSERT INTO `gaminizer_narrative_classes` (`id`, `narrative_id`, `class_id`, `oddity`) VALUES
+INSERT INTO `narrative_classes` (`id`, `narrative_id`, `class_id`, `oddity`) VALUES
 (1, 1, 7, 0),
 (2, 1, 5, 0),
 (3, 1, 9, 0),
@@ -267,10 +267,10 @@ INSERT INTO `gaminizer_narrative_classes` (`id`, `narrative_id`, `class_id`, `od
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_narrative_features`
+-- Table structure for table `narrative_features`
 --
 
-CREATE TABLE `gaminizer_narrative_features` (
+CREATE TABLE `narrative_features` (
   `id` int(11) UNSIGNED NOT NULL,
   `narrative_id` int(11) NOT NULL,
   `feature_id` int(11) NOT NULL,
@@ -278,10 +278,10 @@ CREATE TABLE `gaminizer_narrative_features` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `gaminizer_narrative_features`
+-- Dumping data for table `narrative_features`
 --
 
-INSERT INTO `gaminizer_narrative_features` (`id`, `narrative_id`, `feature_id`, `level`) VALUES
+INSERT INTO `narrative_features` (`id`, `narrative_id`, `feature_id`, `level`) VALUES
 (1, 17, 6, 2),
 (2, 1, 7, 1),
 (3, 1, 8, 1),
@@ -291,10 +291,10 @@ INSERT INTO `gaminizer_narrative_features` (`id`, `narrative_id`, `feature_id`, 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_narrative_races`
+-- Table structure for table `narrative_races`
 --
 
-CREATE TABLE `gaminizer_narrative_races` (
+CREATE TABLE `narrative_races` (
   `id` int(11) UNSIGNED NOT NULL,
   `narrative_id` int(11) NOT NULL,
   `race_id` int(11) NOT NULL,
@@ -302,19 +302,19 @@ CREATE TABLE `gaminizer_narrative_races` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `gaminizer_narrative_races`
+-- Dumping data for table `narrative_races`
 --
 
-INSERT INTO `gaminizer_narrative_races` (`id`, `narrative_id`, `race_id`, `oddity`) VALUES
+INSERT INTO `narrative_races` (`id`, `narrative_id`, `race_id`, `oddity`) VALUES
 (2, 17, 1, 0);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_password_resets`
+-- Table structure for table `password_resets`
 --
 
-CREATE TABLE `gaminizer_password_resets` (
+CREATE TABLE `password_resets` (
   `email` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `token` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -323,10 +323,10 @@ CREATE TABLE `gaminizer_password_resets` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pcs`
+-- Table structure for table `pcs`
 --
 
-CREATE TABLE `gaminizer_pcs` (
+CREATE TABLE `pcs` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) NOT NULL,
   `experience` int(45) DEFAULT NULL,
@@ -335,19 +335,19 @@ CREATE TABLE `gaminizer_pcs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_pcs`
+-- Dumping data for table `pcs`
 --
 
-INSERT INTO `gaminizer_pcs` (`id`, `name`, `experience`, `race_id`, `description`) VALUES
+INSERT INTO `pcs` (`id`, `name`, `experience`, `race_id`, `description`) VALUES
 (1, 'Grindar', 33265, 1, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_actions`
+-- Table structure for table `pc_actions`
 --
 
-CREATE TABLE `gaminizer_pc_actions` (
+CREATE TABLE `pc_actions` (
   `id` int(11) UNSIGNED NOT NULL,
   `actionfeature_id` int(11) DEFAULT NULL,
   `parent_id` int(11) DEFAULT NULL,
@@ -361,10 +361,10 @@ CREATE TABLE `gaminizer_pc_actions` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_classes`
+-- Table structure for table `pc_classes`
 --
 
-CREATE TABLE `gaminizer_pc_classes` (
+CREATE TABLE `pc_classes` (
   `id` int(11) UNSIGNED NOT NULL,
   `pc_id` int(11) NOT NULL,
   `class_id` int(11) NOT NULL,
@@ -372,19 +372,19 @@ CREATE TABLE `gaminizer_pc_classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_pc_classes`
+-- Dumping data for table `pc_classes`
 --
 
-INSERT INTO `gaminizer_pc_classes` (`id`, `pc_id`, `class_id`, `level`) VALUES
+INSERT INTO `pc_classes` (`id`, `pc_id`, `class_id`, `level`) VALUES
 (1, 1, 1, '7');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_features`
+-- Table structure for table `pc_features`
 --
 
-CREATE TABLE `gaminizer_pc_features` (
+CREATE TABLE `pc_features` (
   `id` int(11) UNSIGNED NOT NULL,
   `pc_id` int(11) NOT NULL,
   `feature_id` int(11) NOT NULL,
@@ -394,10 +394,10 @@ CREATE TABLE `gaminizer_pc_features` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_pc_features`
+-- Dumping data for table `pc_features`
 --
 
-INSERT INTO `gaminizer_pc_features` (`id`, `pc_id`, `feature_id`, `feature_type`, `name`, `description`) VALUES
+INSERT INTO `pc_features` (`id`, `pc_id`, `feature_id`, `feature_type`, `name`, `description`) VALUES
 (1, 1, 1, NULL, 'Humans speak common', NULL),
 (2, 1, 2, NULL, 'You learned dwarven though your travels', NULL),
 (3, 1, 3, NULL, NULL, NULL),
@@ -407,10 +407,10 @@ INSERT INTO `gaminizer_pc_features` (`id`, `pc_id`, `feature_id`, `feature_type`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_narrative`
+-- Table structure for table `pc_narrative`
 --
 
-CREATE TABLE `gaminizer_pc_narrative` (
+CREATE TABLE `pc_narrative` (
   `id` int(11) UNSIGNED NOT NULL,
   `narrative_id` int(11) NOT NULL,
   `pc_id` int(11) NOT NULL,
@@ -421,10 +421,10 @@ CREATE TABLE `gaminizer_pc_narrative` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_possessions`
+-- Table structure for table `pc_possessions`
 --
 
-CREATE TABLE `gaminizer_pc_possessions` (
+CREATE TABLE `pc_possessions` (
   `id` int(11) UNSIGNED NOT NULL,
   `pc_id` int(11) NOT NULL,
   `item_id` int(11) NOT NULL,
@@ -434,19 +434,19 @@ CREATE TABLE `gaminizer_pc_possessions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_pc_possessions`
+-- Dumping data for table `pc_possessions`
 --
 
-INSERT INTO `gaminizer_pc_possessions` (`id`, `pc_id`, `item_id`, `status`, `number`, `description`) VALUES
+INSERT INTO `pc_possessions` (`id`, `pc_id`, `item_id`, `status`, `number`, `description`) VALUES
 (1, 1, 1, 'equiped', 1, '');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_proficiencies`
+-- Table structure for table `pc_proficiencies`
 --
 
-CREATE TABLE `gaminizer_pc_proficiencies` (
+CREATE TABLE `pc_proficiencies` (
   `id` int(11) UNSIGNED NOT NULL,
   `pc_id` int(11) NOT NULL,
   `proficiency_id` int(11) NOT NULL,
@@ -459,10 +459,10 @@ CREATE TABLE `gaminizer_pc_proficiencies` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_spellslots`
+-- Table structure for table `pc_spellslots`
 --
 
-CREATE TABLE `gaminizer_pc_spellslots` (
+CREATE TABLE `pc_spellslots` (
   `id` int(11) UNSIGNED NOT NULL,
   `pc_id` int(11) NOT NULL,
   `ammount` varchar(255) DEFAULT NULL,
@@ -472,10 +472,10 @@ CREATE TABLE `gaminizer_pc_spellslots` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_pc_statmodifiers`
+-- Table structure for table `pc_statmodifiers`
 --
 
-CREATE TABLE `gaminizer_pc_statmodifiers` (
+CREATE TABLE `pc_statmodifiers` (
   `id` int(11) UNSIGNED NOT NULL,
   `pc_id` int(11) NOT NULL,
   `type` varchar(45) DEFAULT NULL,
@@ -486,10 +486,10 @@ CREATE TABLE `gaminizer_pc_statmodifiers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_pc_statmodifiers`
+-- Dumping data for table `pc_statmodifiers`
 --
 
-INSERT INTO `gaminizer_pc_statmodifiers` (`id`, `pc_id`, `type`, `override`, `value`, `granter_id`, `granter_name`) VALUES
+INSERT INTO `pc_statmodifiers` (`id`, `pc_id`, `type`, `override`, `value`, `granter_id`, `granter_name`) VALUES
 (1, 1, 'AS_STR', NULL, 16, NULL, NULL),
 (2, 1, 'AS_DEX', NULL, 10, NULL, NULL),
 (3, 1, 'AS_CON', NULL, 16, NULL, NULL),
@@ -507,10 +507,10 @@ INSERT INTO `gaminizer_pc_statmodifiers` (`id`, `pc_id`, `type`, `override`, `va
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_proficiencies`
+-- Table structure for table `proficiencies`
 --
 
-CREATE TABLE `gaminizer_proficiencies` (
+CREATE TABLE `proficiencies` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) DEFAULT NULL,
   `description` mediumtext,
@@ -518,10 +518,10 @@ CREATE TABLE `gaminizer_proficiencies` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_proficiencies`
+-- Dumping data for table `proficiencies`
 --
 
-INSERT INTO `gaminizer_proficiencies` (`id`, `name`, `description`, `type`) VALUES
+INSERT INTO `proficiencies` (`id`, `name`, `description`, `type`) VALUES
 (1, 'Athletics', 'Your Strength (Athletics) check covers difficult situations you encounter while climbing, jumping, or swimming. ', 'CORE'),
 (2, 'Riding', 'Your Strength (Riding) check covers difficult situations you encounter while on on a mount.', 'CORE'),
 (3, 'Acrobatics', 'Your Dexterity (Acrobatics) check covers your attempt to stay on your feet in a tricky situation, such as when you’re trying to run across a sheet of ice, balance on a tightrope, or stay upright on a rocking ship’s deck. ', 'CORE'),
@@ -540,10 +540,10 @@ INSERT INTO `gaminizer_proficiencies` (`id`, `name`, `description`, `type`) VALU
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_races`
+-- Table structure for table `races`
 --
 
-CREATE TABLE `gaminizer_races` (
+CREATE TABLE `races` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) DEFAULT NULL,
   `description_short` varchar(255) NOT NULL,
@@ -553,19 +553,19 @@ CREATE TABLE `gaminizer_races` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_races`
+-- Dumping data for table `races`
 --
 
-INSERT INTO `gaminizer_races` (`id`, `name`, `description_short`, `parent_id`, `type`, `description`) VALUES
+INSERT INTO `races` (`id`, `name`, `description_short`, `parent_id`, `type`, `description`) VALUES
 (1, 'Human', '', 0, 'CORE', 'The typical human');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_race_features`
+-- Table structure for table `race_features`
 --
 
-CREATE TABLE `gaminizer_race_features` (
+CREATE TABLE `race_features` (
   `id` int(11) DEFAULT NULL,
   `feature_id` int(11) DEFAULT NULL,
   `race_id` int(11) DEFAULT NULL
@@ -574,10 +574,10 @@ CREATE TABLE `gaminizer_race_features` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_spellcastings`
+-- Table structure for table `spellcastings`
 --
 
-CREATE TABLE `gaminizer_spellcastings` (
+CREATE TABLE `spellcastings` (
   `id` int(11) UNSIGNED NOT NULL,
   `casting_ability` varchar(255) NOT NULL,
   `level` int(11) NOT NULL,
@@ -590,40 +590,40 @@ CREATE TABLE `gaminizer_spellcastings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_spellcastings`
+-- Dumping data for table `spellcastings`
 --
 
-INSERT INTO `gaminizer_spellcastings` (`id`, `casting_ability`, `level`, `type`, `uses`, `recharge`, `known_calc`, `prepared_calc`, `parent_id`) VALUES
+INSERT INTO `spellcastings` (`id`, `casting_ability`, `level`, `type`, `uses`, `recharge`, `known_calc`, `prepared_calc`, `parent_id`) VALUES
 (1, 'CHA', 1, 'SPSL', NULL, NULL, NULL, NULL, 0),
 (2, 'CHA', 2, 'SPSL', NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_spellcasting_spells`
+-- Table structure for table `spellcasting_spells`
 --
 
-CREATE TABLE `gaminizer_spellcasting_spells` (
+CREATE TABLE `spellcasting_spells` (
   `id` int(11) UNSIGNED NOT NULL,
   `spellcastingfeature_id` int(11) NOT NULL,
   `spell_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_spellcasting_spells`
+-- Dumping data for table `spellcasting_spells`
 --
 
-INSERT INTO `gaminizer_spellcasting_spells` (`id`, `spellcastingfeature_id`, `spell_id`) VALUES
+INSERT INTO `spellcasting_spells` (`id`, `spellcastingfeature_id`, `spell_id`) VALUES
 (1, 1, 1),
 (2, 2, 2);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_spells`
+-- Table structure for table `spells`
 --
 
-CREATE TABLE `gaminizer_spells` (
+CREATE TABLE `spells` (
   `id` int(11) UNSIGNED NOT NULL,
   `name` varchar(45) DEFAULT NULL,
   `level` int(11) DEFAULT NULL,
@@ -641,20 +641,20 @@ CREATE TABLE `gaminizer_spells` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_spells`
+-- Dumping data for table `spells`
 --
 
-INSERT INTO `gaminizer_spells` (`id`, `name`, `level`, `school`, `casting_time`, `casting_time_unit`, `range`, `range_unit`, `components`, `concentration`, `irreplaceable_components`, `duration`, `duration_unit`, `description`) VALUES
+INSERT INTO `spells` (`id`, `name`, `level`, `school`, `casting_time`, `casting_time_unit`, `range`, `range_unit`, `components`, `concentration`, `irreplaceable_components`, `duration`, `duration_unit`, `description`) VALUES
 (1, 'bless', 1, 'enchantment', 1, 'action', 30, 'feet', 'VSM', 0x01, NULL, 1, 'minute', 'You bless ppl, yay'),
 (2, 'aid', 2, 'abjuration', 1, 'feet', 30, 'feet', 'vsm', NULL, NULL, 8, 'hours', 'bless 3 allies');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_stat_modifiers`
+-- Table structure for table `stat_modifiers`
 --
 
-CREATE TABLE `gaminizer_stat_modifiers` (
+CREATE TABLE `stat_modifiers` (
   `id` int(11) UNSIGNED NOT NULL,
   `value` int(11) NOT NULL,
   `type` varchar(255) NOT NULL,
@@ -664,10 +664,10 @@ CREATE TABLE `gaminizer_stat_modifiers` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_users`
+-- Table structure for table `users`
 --
 
-CREATE TABLE `gaminizer_users` (
+CREATE TABLE `users` (
   `id` int(10) UNSIGNED NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `password` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
@@ -676,20 +676,20 @@ CREATE TABLE `gaminizer_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `gaminizer_users`
+-- Dumping data for table `users`
 --
 
-INSERT INTO `gaminizer_users` (`id`, `name`, `password`, `remember_token`, `rights_group`) VALUES
+INSERT INTO `users` (`id`, `name`, `password`, `remember_token`, `rights_group`) VALUES
 (1, 'Grindar', '', NULL, 0),
 (2, 'Grindarian', '$2y$10$lJSpv0eo4ZZXvBbnY7UH0.ROKrdEXNAm6W8fD0bWyM5kVHi99VIjC', 'LCT3lK1NAtg5v7av0VoXyrqWjwBFFOlfYlKGFBooWHQIeaTiDom37VgZnXyP', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_weapon`
+-- Table structure for table `weapon`
 --
 
-CREATE TABLE `gaminizer_weapon` (
+CREATE TABLE `weapon` (
   `id` int(11) UNSIGNED NOT NULL,
   `melee_range` int(11) NOT NULL,
   `short_range` int(11) NOT NULL,
@@ -698,19 +698,19 @@ CREATE TABLE `gaminizer_weapon` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `gaminizer_weapon`
+-- Dumping data for table `weapon`
 --
 
-INSERT INTO `gaminizer_weapon` (`id`, `melee_range`, `short_range`, `long_range`, `type`) VALUES
+INSERT INTO `weapon` (`id`, `melee_range`, `short_range`, `long_range`, `type`) VALUES
 (1, 5, 0, 0, 'MRTL');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `gaminizer_weapon_tags`
+-- Table structure for table `weapon_tags`
 --
 
-CREATE TABLE `gaminizer_weapon_tags` (
+CREATE TABLE `weapon_tags` (
   `id` int(11) UNSIGNED NOT NULL,
   `tag` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -720,196 +720,196 @@ CREATE TABLE `gaminizer_weapon_tags` (
 --
 
 --
--- Indexes for table `gaminizer_ability_scores`
+-- Indexes for table `ability_scores`
 --
-ALTER TABLE `gaminizer_ability_scores`
+ALTER TABLE `ability_scores`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_actions`
+-- Indexes for table `actions`
 --
-ALTER TABLE `gaminizer_actions`
+ALTER TABLE `actions`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_classes`
+-- Indexes for table `classes`
 --
-ALTER TABLE `gaminizer_classes`
+ALTER TABLE `classes`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_class_features`
+-- Indexes for table `class_features`
 --
-ALTER TABLE `gaminizer_class_features`
+ALTER TABLE `class_features`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_feats`
+-- Indexes for table `feats`
 --
-ALTER TABLE `gaminizer_feats`
+ALTER TABLE `feats`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_featureables`
+-- Indexes for table `featureables`
 --
-ALTER TABLE `gaminizer_featureables`
+ALTER TABLE `featureables`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_features`
+-- Indexes for table `features`
 --
-ALTER TABLE `gaminizer_features`
+ALTER TABLE `features`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_feat_features`
+-- Indexes for table `feat_features`
 --
-ALTER TABLE `gaminizer_feat_features`
+ALTER TABLE `feat_features`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_items`
+-- Indexes for table `items`
 --
-ALTER TABLE `gaminizer_items`
+ALTER TABLE `items`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_narratives`
+-- Indexes for table `narratives`
 --
-ALTER TABLE `gaminizer_narratives`
+ALTER TABLE `narratives`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_narrative_classes`
+-- Indexes for table `narrative_classes`
 --
-ALTER TABLE `gaminizer_narrative_classes`
+ALTER TABLE `narrative_classes`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_narrative_features`
+-- Indexes for table `narrative_features`
 --
-ALTER TABLE `gaminizer_narrative_features`
+ALTER TABLE `narrative_features`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_narrative_races`
+-- Indexes for table `narrative_races`
 --
-ALTER TABLE `gaminizer_narrative_races`
+ALTER TABLE `narrative_races`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_password_resets`
+-- Indexes for table `password_resets`
 --
-ALTER TABLE `gaminizer_password_resets`
+ALTER TABLE `password_resets`
   ADD KEY `password_resets_email_index` (`email`),
   ADD KEY `password_resets_token_index` (`token`);
 
 --
--- Indexes for table `gaminizer_pcs`
+-- Indexes for table `pcs`
 --
-ALTER TABLE `gaminizer_pcs`
+ALTER TABLE `pcs`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_actions`
+-- Indexes for table `pc_actions`
 --
-ALTER TABLE `gaminizer_pc_actions`
+ALTER TABLE `pc_actions`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_classes`
+-- Indexes for table `pc_classes`
 --
-ALTER TABLE `gaminizer_pc_classes`
+ALTER TABLE `pc_classes`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_features`
+-- Indexes for table `pc_features`
 --
-ALTER TABLE `gaminizer_pc_features`
+ALTER TABLE `pc_features`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_narrative`
+-- Indexes for table `pc_narrative`
 --
-ALTER TABLE `gaminizer_pc_narrative`
+ALTER TABLE `pc_narrative`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_possessions`
+-- Indexes for table `pc_possessions`
 --
-ALTER TABLE `gaminizer_pc_possessions`
+ALTER TABLE `pc_possessions`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_proficiencies`
+-- Indexes for table `pc_proficiencies`
 --
-ALTER TABLE `gaminizer_pc_proficiencies`
+ALTER TABLE `pc_proficiencies`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_spellslots`
+-- Indexes for table `pc_spellslots`
 --
-ALTER TABLE `gaminizer_pc_spellslots`
+ALTER TABLE `pc_spellslots`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_pc_statmodifiers`
+-- Indexes for table `pc_statmodifiers`
 --
-ALTER TABLE `gaminizer_pc_statmodifiers`
+ALTER TABLE `pc_statmodifiers`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_proficiencies`
+-- Indexes for table `proficiencies`
 --
-ALTER TABLE `gaminizer_proficiencies`
+ALTER TABLE `proficiencies`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_races`
+-- Indexes for table `races`
 --
-ALTER TABLE `gaminizer_races`
+ALTER TABLE `races`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_spellcastings`
+-- Indexes for table `spellcastings`
 --
-ALTER TABLE `gaminizer_spellcastings`
+ALTER TABLE `spellcastings`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_spellcasting_spells`
+-- Indexes for table `spellcasting_spells`
 --
-ALTER TABLE `gaminizer_spellcasting_spells`
+ALTER TABLE `spellcasting_spells`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_spells`
+-- Indexes for table `spells`
 --
-ALTER TABLE `gaminizer_spells`
+ALTER TABLE `spells`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_stat_modifiers`
+-- Indexes for table `stat_modifiers`
 --
-ALTER TABLE `gaminizer_stat_modifiers`
+ALTER TABLE `stat_modifiers`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_users`
+-- Indexes for table `users`
 --
-ALTER TABLE `gaminizer_users`
+ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_weapon`
+-- Indexes for table `weapon`
 --
-ALTER TABLE `gaminizer_weapon`
+ALTER TABLE `weapon`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `gaminizer_weapon_tags`
+-- Indexes for table `weapon_tags`
 --
-ALTER TABLE `gaminizer_weapon_tags`
+ALTER TABLE `weapon_tags`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -917,159 +917,159 @@ ALTER TABLE `gaminizer_weapon_tags`
 --
 
 --
--- AUTO_INCREMENT for table `gaminizer_ability_scores`
+-- AUTO_INCREMENT for table `ability_scores`
 --
-ALTER TABLE `gaminizer_ability_scores`
+ALTER TABLE `ability_scores`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_actions`
+-- AUTO_INCREMENT for table `actions`
 --
-ALTER TABLE `gaminizer_actions`
+ALTER TABLE `actions`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_classes`
+-- AUTO_INCREMENT for table `classes`
 --
-ALTER TABLE `gaminizer_classes`
+ALTER TABLE `classes`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 --
--- AUTO_INCREMENT for table `gaminizer_class_features`
+-- AUTO_INCREMENT for table `class_features`
 --
-ALTER TABLE `gaminizer_class_features`
+ALTER TABLE `class_features`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_feats`
+-- AUTO_INCREMENT for table `feats`
 --
-ALTER TABLE `gaminizer_feats`
+ALTER TABLE `feats`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_featureables`
+-- AUTO_INCREMENT for table `featureables`
 --
-ALTER TABLE `gaminizer_featureables`
+ALTER TABLE `featureables`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
--- AUTO_INCREMENT for table `gaminizer_features`
+-- AUTO_INCREMENT for table `features`
 --
-ALTER TABLE `gaminizer_features`
+ALTER TABLE `features`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 --
--- AUTO_INCREMENT for table `gaminizer_feat_features`
+-- AUTO_INCREMENT for table `feat_features`
 --
-ALTER TABLE `gaminizer_feat_features`
+ALTER TABLE `feat_features`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_items`
+-- AUTO_INCREMENT for table `items`
 --
-ALTER TABLE `gaminizer_items`
+ALTER TABLE `items`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `gaminizer_narratives`
+-- AUTO_INCREMENT for table `narratives`
 --
-ALTER TABLE `gaminizer_narratives`
+ALTER TABLE `narratives`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 --
--- AUTO_INCREMENT for table `gaminizer_narrative_classes`
+-- AUTO_INCREMENT for table `narrative_classes`
 --
-ALTER TABLE `gaminizer_narrative_classes`
+ALTER TABLE `narrative_classes`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 --
--- AUTO_INCREMENT for table `gaminizer_narrative_features`
+-- AUTO_INCREMENT for table `narrative_features`
 --
-ALTER TABLE `gaminizer_narrative_features`
+ALTER TABLE `narrative_features`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 --
--- AUTO_INCREMENT for table `gaminizer_narrative_races`
+-- AUTO_INCREMENT for table `narrative_races`
 --
-ALTER TABLE `gaminizer_narrative_races`
+ALTER TABLE `narrative_races`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
--- AUTO_INCREMENT for table `gaminizer_pcs`
+-- AUTO_INCREMENT for table `pcs`
 --
-ALTER TABLE `gaminizer_pcs`
+ALTER TABLE `pcs`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_actions`
+-- AUTO_INCREMENT for table `pc_actions`
 --
-ALTER TABLE `gaminizer_pc_actions`
+ALTER TABLE `pc_actions`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_classes`
+-- AUTO_INCREMENT for table `pc_classes`
 --
-ALTER TABLE `gaminizer_pc_classes`
+ALTER TABLE `pc_classes`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_features`
+-- AUTO_INCREMENT for table `pc_features`
 --
-ALTER TABLE `gaminizer_pc_features`
+ALTER TABLE `pc_features`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_narrative`
+-- AUTO_INCREMENT for table `pc_narrative`
 --
-ALTER TABLE `gaminizer_pc_narrative`
+ALTER TABLE `pc_narrative`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_possessions`
+-- AUTO_INCREMENT for table `pc_possessions`
 --
-ALTER TABLE `gaminizer_pc_possessions`
+ALTER TABLE `pc_possessions`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_proficiencies`
+-- AUTO_INCREMENT for table `pc_proficiencies`
 --
-ALTER TABLE `gaminizer_pc_proficiencies`
+ALTER TABLE `pc_proficiencies`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_spellslots`
+-- AUTO_INCREMENT for table `pc_spellslots`
 --
-ALTER TABLE `gaminizer_pc_spellslots`
+ALTER TABLE `pc_spellslots`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_pc_statmodifiers`
+-- AUTO_INCREMENT for table `pc_statmodifiers`
 --
-ALTER TABLE `gaminizer_pc_statmodifiers`
+ALTER TABLE `pc_statmodifiers`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 --
--- AUTO_INCREMENT for table `gaminizer_proficiencies`
+-- AUTO_INCREMENT for table `proficiencies`
 --
-ALTER TABLE `gaminizer_proficiencies`
+ALTER TABLE `proficiencies`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 --
--- AUTO_INCREMENT for table `gaminizer_races`
+-- AUTO_INCREMENT for table `races`
 --
-ALTER TABLE `gaminizer_races`
+ALTER TABLE `races`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `gaminizer_spellcastings`
+-- AUTO_INCREMENT for table `spellcastings`
 --
-ALTER TABLE `gaminizer_spellcastings`
+ALTER TABLE `spellcastings`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
--- AUTO_INCREMENT for table `gaminizer_spellcasting_spells`
+-- AUTO_INCREMENT for table `spellcasting_spells`
 --
-ALTER TABLE `gaminizer_spellcasting_spells`
+ALTER TABLE `spellcasting_spells`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
--- AUTO_INCREMENT for table `gaminizer_spells`
+-- AUTO_INCREMENT for table `spells`
 --
-ALTER TABLE `gaminizer_spells`
+ALTER TABLE `spells`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
--- AUTO_INCREMENT for table `gaminizer_stat_modifiers`
+-- AUTO_INCREMENT for table `stat_modifiers`
 --
-ALTER TABLE `gaminizer_stat_modifiers`
+ALTER TABLE `stat_modifiers`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `gaminizer_users`
+-- AUTO_INCREMENT for table `users`
 --
-ALTER TABLE `gaminizer_users`
+ALTER TABLE `users`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
--- AUTO_INCREMENT for table `gaminizer_weapon`
+-- AUTO_INCREMENT for table `weapon`
 --
-ALTER TABLE `gaminizer_weapon`
+ALTER TABLE `weapon`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `gaminizer_weapon_tags`
+-- AUTO_INCREMENT for table `weapon_tags`
 --
-ALTER TABLE `gaminizer_weapon_tags`
+ALTER TABLE `weapon_tags`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

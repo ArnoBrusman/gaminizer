@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+        
+        {% block header_block %}
+            {# early 'do' scripts #}
+            {#{% do load.script('vectormapcore', 'plugin/vectormap/jquery-jvectormap-1.2.2.min.js',{require:['jquery']}) %}
+            {% do load.script('vectormap', 'plugin/vectormap/jquery-jvectormap-world-mill-en.js',{require:['jquery','vectormapcore']}) %}#}
+            {% do load.script('appconfig', 'admin/app.config.js',{require:['jquery', 'jqueryui', 'bootstrap']}) %}
+            {% do load.script('appseed', 'admin/app.seed.js',{require:['jquery', 'appconfig', 'jqueryui', 'bootstrap']}) %}
+            {% do load.script('admin', 'admin/admin.js', {require: ['jqueryui', 'appseed', 'smartwidgets', 'selectize', 'underscore', 'backbone']}) %}
+            {% do load.script('redirect', 'plugins/redirect.js',{require:'jquery'}) %}
+            {% do load.script('seosites_admin') %}
+        {% endblock %}
+        
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+
+
+        <title>{% block seo_title %}SEO Websites Admin{% endblock %}</title>
+        <link rel="shortcut icon" type="image/x-icon" href="images/icon/favicon.ico">
+
+        <base href="/">
+
+
+        <!-- TODO:RESEARCH why do we need this? -->
+        <link rel="start" title="Homepagina" href="/" >
+        {#<link rel="search" title="Zoek" href="search.php" >#}
+
+        <!-- BEGIN style & scripts -->
+
+        <!-- #CSS Links -->
+        <!-- Basic Styles -->
+        {% do load.style('bootstrap.min.css') %}
+        {% do load.style('font-awesome.min.css') %}
+        {% do load.style('selectize.css') %}
+        <!-- SmartAdmin Styles : Caution! DO NOT change the order -->
+        {% do load.style('admin/smartadmin-production.min.css') %}
+        {% do load.style('admin/smartadmin-rpoduction-plugins.css') %}
+        {% do load.style('admin/smartadmin-skins.min.css') %}
+
+        <!-- SmartAdmin RTL Support  -->
+        {% do load.style('admin/smartadmin-rtl.min.css') %}
+        <link rel="stylesheet" type="text/css" media="screen" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.min.css">
+        {% do load.style('plupload/jquery.ui.plupload.css') %}
+        {% do load.style('admin/gridstack.css') %}
+        {% do load.style('admin/gridstack.css') %}
+        {% do load.style('admin/style.css') %}
+        {% do load.style('admin/summernote.css') %}
+        
+        {% block header_css %}
+        {% endblock %}
+
+        {% for style in load.styles() %}
+            {# TODO: test #}
+            <link rel="stylesheet" type="text/css" media="screen" href="{{ style }}">
+        {% endfor %}
+
+        <!-- GOOGLE FONT -->
+        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,300,400,700">
+
+        {% do load.script('jquery') %}
+        {% set jqscript = load.getScript('jquery') %}
+        <script type="text/javascript" src="{{ jqscript }}"></script>
+        
+        {% include 'send_auth' %}
+    </head>
+
+
+    <!-- #BODY -->
+    <!-- Possible Classes
+    
+            * 'smart-style-{SKIN#}'
+            * 'smart-rtl'         - Switch theme mode to RTL
+            * 'menu-on-top'       - Switch to top navigation (no DOM change required)
+            * 'no-menu'			  - Hides the menu completely
+            * 'hidden-menu'       - Hides the main menu but still accessable by hovering over left edge
+            * 'fixed-header'      - Fixes the header
+            * 'fixed-navigation'  - Fixes the main menu
+            * 'fixed-ribbon'      - Fixes breadcrumb
+            * 'fixed-page-footer' - Fixes footer
+            * 'container'         - boxed layout mode (non-responsive: will not work with fixed-navigation & fixed-ribbon)
+    -->
+    <body class="">
+
+        {% block header %}
+            {% include 'admin.includes.header' %}
+        {% endblock %}
+
+        
+        {% block navigation %}
+            {% include 'admin.includes.navigation' %}
+        {% endblock %}
+
+        <!-- #MAIN PANEL -->
+        {% block main_panel %}
+        <div id="main" role="main">
+
+            <!-- RIBBON -->
+            <div id="ribbon">
+
+                <!-- breadcrumb -->
+                <ol class="breadcrumb">
+                    <li>Home</li>
+                    <li>Blank</li>
+                </ol>
+                <!-- end breadcrumb -->
+
+                <!-- You can also add more buttons to the
+                ribbon for further usability
+
+                Example below:
+
+                <span class="ribbon-button-alignment pull-right" style="margin-right:25px">
+                        <a href="#" id="search" class="btn btn-ribbon hidden-xs" data-title="search"><i class="fa fa-grid"></i> Change Grid</a>
+                        <span id="add" class="btn btn-ribbon hidden-xs" data-title="add"><i class="fa fa-plus"></i> Add</span>
+                        <button id="search" class="btn btn-ribbon" data-title="search"><i class="fa fa-search"></i> <span class="hidden-mobile">Search</span></button>
+                </span> -->
+
+            </div>
+            <!-- END RIBBON -->
+
+            <!-- #MAIN CONTENT -->
+
+
+            <!-- col -->
+            {% block main_panel_content %}
+            <!-- DEFAULT HEADER -->
+            <div class="row">
+                <div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
+                    <h1 class="page-title txt-color-blueDark">
+                        <i class="fa fa-edit"></i> Page Header
+                        <span>> Subtitle</span>
+                    </h1>
+                </div>
+            </div>
+            {% endblock %}
+            <!-- end col -->
+
+
+            <!-- end row -->
+
+            <!-- END #MAIN CONTENT -->
+
+        </div>
+        {% endblock %}
+        <!-- END #MAIN PANEL -->
+
+        <!-- #PAGE FOOTER -->
+        <div class="page-footer">
+            <div class="row">
+                <div class="col-xs-12 col-sm-6">
+                    <span class="txt-color-white">SmartAdmin 1.8.x <span class="hidden-xs"> - Web Application Framework</span> © 2014-2016</span>
+                </div>
+            </div>
+            <!-- end row -->
+        </div>
+        <!-- END FOOTER -->
+
+
+        <!-- #SHORTCUT AREA : With large tiles (activated via clicking user name tag)
+                 Note: These tiles are completely responsive, you can add as many as you like -->
+        <div id="shortcut">
+            <ul>
+                <li>
+                    <a href="index.html" class="jarvismetro-tile big-cubes bg-color-blue"> <span class="iconbox"> <i class="fa fa-envelope fa-4x"></i> <span>Mail <span class="label pull-right bg-color-darken">14</span></span> </span> </a>
+                </li>
+            </ul>
+        </div>
+        <!-- END SHORTCUT AREA -->
+
+        <!--================================================== -->
+
+        <!-- PACE LOADER - turn this on if you want ajax loading to show (caution: uses lots of memory on iDevices)
+        <script data-pace-options='{ "restartOnRequestAfter": true }' src="js/plugin/pace/pace.min.js"></script>-->
+
+        {% block scripts %}
+            {% include 'scripts' %}
+        {% endblock %}
+        {#{% for script in page.get_scripts() %}
+            <script type="text/javascript" src="{{ script }}"></script>
+        {% endfor %}#}
+    </body>
+</html>
